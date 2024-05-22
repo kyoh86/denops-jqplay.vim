@@ -11,7 +11,7 @@ if [ -z "${NAME}" ]; then
 fi
 
 find ./* -type f -not -name 'init.zsh' | while read -r file; do
-  sed -i '' -e "s/boilerplate/${NAME}/g" "${file}";
+  sed -i'' -e "s/boilerplate/${NAME}/g" "${file}";
 done
 
 find ./* -name '*boilerplate*' | while read -r file; do
@@ -20,4 +20,4 @@ done
 
 # LICENSEファイルの中の年号を今年の年号に置換する
 YEAR="$(date "+%Y")"
-sed -i '' -e "s/2023/${YEAR}/g" LICENSE
+sed -i'' -e "s/2023/${YEAR}/g" LICENSE
