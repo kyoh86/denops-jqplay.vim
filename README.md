@@ -1,16 +1,10 @@
-# denops-boilerplate.vim
+# denops-jqplay.vim
 
-Superpractilisticexpermientocious.
-
-## Usage
-
-1. Fork this repository to `denops-xxx.vim`
-1. Call `init.zsh hogehoge` to replace names in the repository
-1. Delete this section from README.md
+Run 'jq' interactively in Vim/Neovim
 
 ## doc
 
-[./doc/boilerplate.txt](./doc/boilerplate.txt)
+[./doc/jqplay.txt](./doc/jqplay.txt)
 
 # License
 

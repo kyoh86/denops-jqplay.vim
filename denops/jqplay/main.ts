@@ -12,7 +12,7 @@ import {
 } from "https://deno.land/std@0.224.0/log/mod.ts";
 
 export async function main(denops: Denops) {
-  const cacheFile = join(xdg.cache(), "denops-boilerplate-vim", "log.txt");
+  const cacheFile = join(xdg.cache(), "denops-jqplay-vim", "log.txt");
   await ensureFile(cacheFile);
 
   setup({
@@ -25,11 +25,11 @@ export async function main(denops: Denops) {
       }),
     },
     loggers: {
-      "denops-boilerplate": {
+      "denops-jqplay": {
         level: "INFO",
         handlers: ["console", "cache"],
       },
-      "denops-boilerplate-verbose": {
+      "denops-jqplay-verbose": {
         level: "DEBUG",
         handlers: ["cache"],
       },
@@ -44,7 +44,7 @@ export async function main(denops: Denops) {
         const baz = ensure(uBaz, is.OptionalOf(is.String));
         console.log(foo, bar, baz);
       } catch (err) {
-        getLogger("denops-boilerplate").error(err);
+        getLogger("denops-jqplay").error(err);
       }
     },
   };
