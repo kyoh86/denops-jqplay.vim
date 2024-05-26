@@ -1,50 +1,26 @@
-import { Denops } from "https://deno.land/x/denops_std@v6.5.0/mod.ts";
-import {} from "https://deno.land/x/denops_std@v6.5.0/helper/mod.ts";
-import xdg from "https://deno.land/x/xdg@v10.6.0/src/mod.deno.ts";
-import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
-import { ensureFile } from "https://deno.land/std@0.224.0/fs/mod.ts";
-import { ensure, is } from "https://deno.land/x/unknownutil@v3.18.1/mod.ts";
-import {
-  ConsoleHandler,
-  getLogger,
-  RotatingFileHandler,
-  setup,
-} from "https://deno.land/std@0.224.0/log/mod.ts";
+import { Denops } from "jsr:@denops/core@6.1.0";
+import { bindDispatcher } from "jsr:@kyoh86/denops-bind-params@0.0.2";
+import { kebabToCamel } from "jsr:@kyoh86/denops-bind-params@0.0.2/keycase";
+import { ensure, is } from "jsr:@core/unknownutil@3.18.1";
+import { parse } from "https://deno.land/x/denops_std@v6.5.0/argument/mod.ts";
+import { isPlayParams, play } from "./command/play.ts";
 
-export async function main(denops: Denops) {
-  const cacheFile = join(xdg.cache(), "denops-jqplay-vim", "log.txt");
-  await ensureFile(cacheFile);
-
-  setup({
-    handlers: {
-      console: new ConsoleHandler("DEBUG"),
-      cache: new RotatingFileHandler("DEBUG", {
-        filename: cacheFile,
-        maxBytes: 1024 * 1024,
-        maxBackupCount: 1,
-      }),
-    },
-    loggers: {
-      "denops-jqplay": {
-        level: "INFO",
-        handlers: ["console", "cache"],
-      },
-      "denops-jqplay-verbose": {
-        level: "DEBUG",
-        handlers: ["cache"],
-      },
+export function main(denops: Denops) {
+  const bound = bindDispatcher({
+    play: async (uParams: unknown) => {
+      return await play(denops, ensure(uParams, isPlayParams));
     },
   });
 
   denops.dispatcher = {
-    foo(uFoo: unknown, uBar: unknown, uBaz: unknown) {
-      try {
-        const foo = ensure(uFoo, is.String);
-        const bar = ensure(uBar, is.Record);
-        const baz = ensure(uBaz, is.OptionalOf(is.String));
-        console.log(foo, bar, baz);
-      } catch (err) {
-        getLogger("denops-jqplay").error(err);
+    ...bound,
+    "command:play": async (uMods: unknown, uArgs: unknown) => {
+      const [_uOpts, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+      const mods = ensure(uMods, is.String);
+      const flags = ensure(uFlags, isPlayParams);
+      const file = await bound.play({ mods, ...kebabToCamel(flags) });
+      if (!file) {
+        return;
       }
     },
   };

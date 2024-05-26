@@ -1,24 +1,24 @@
-*jqplay.txt* A Vim plugin as ...
-                                        *jqplay* *denops-jqplay.txt*
+*jqplay.txt* Run 'jq' interactively in Vim/Neovim
+                                                  *jqplay* *denops-jqplay.txt*
 
 Author: kyoh86 <me@kyoh86.dev>
 License: MIT License
 
 
 ==============================================================================
-                                                        *jqplay-contents*
+                                                             *jqplay-contents*
 Contents ~
 
-Install           |jqplay-install|
-Setup             |jqplay-setup|
-Function          |jqplay-function|
-Commands          |jqplay-commands|
-Keymaps           |jqplay-keymaps|
-Denops commands   |jqplay-denops-commands|
+Install                          |jqplay-install|
+Setup                            |jqplay-setup|
+Function                         |jqplay-function|
+Commands                         |jqplay-commands|
+Keymaps                          |jqplay-keymaps|
+API                              |jqplay-api|
 
 
 ==============================================================================
-                                                         *jqplay-install*
+                                                              *jqplay-install*
 Install ~
 
 You need to install |denops.vim| as a dependency.
@@ -27,28 +27,33 @@ You need to install |denops.vim| as a dependency.
 
 
 ==============================================================================
-                                                           *jqplay-setup*
+                                                                *jqplay-setup*
 Setup ~
 
 
 ==============================================================================
-                                                        *jqplay-function*
+                                                             *jqplay-function*
 Function ~
 
-                                                         *jqplay#setup()*
+                                                              *jqplay#setup()*
 jqplay#setup()
 
 	TODO
 
 
 ==============================================================================
-                                                        *jqplay-commands*
+                                                             *jqplay-commands*
 Commands ~
 
 
 ==============================================================================
-                                                         *jqplay-keymaps*
+                                                              *jqplay-keymaps*
 Keymaps ~
+
+
+==============================================================================
+                                                                  *jqplay-api*
+API ~
 
 
 ==============================================================================
