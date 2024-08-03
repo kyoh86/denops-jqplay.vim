@@ -1,5 +1,5 @@
-import type { Denops } from "jsr:@denops/core@~6.0.6";
-import { is, Predicate } from "jsr:@core/unknownutil@~3.18.1";
+import type { Denops } from "jsr:@denops/core@~7.0.0";
+import { is, type Predicate } from "jsr:@core/unknownutil@~4.0.0";
 
 type PlayParams = {
   mods: string;
@@ -11,7 +11,7 @@ export const isPlayParams = is.ObjectOf({
   file: is.String,
 }) satisfies Predicate<PlayParams>;
 
-export function play(denops: Denops, params: PlayParams) {
+export function play(_denops: Denops, params: PlayParams) {
   console.log(params);
   // jqfilter://session/1/source/empty
   // jqfilter://session/1/source/scratch/<bufnr>
