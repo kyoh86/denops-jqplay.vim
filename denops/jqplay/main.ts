@@ -1,7 +1,7 @@
-import { Denops } from "jsr:@denops/core@6.1.0";
-import { bindDispatcher } from "jsr:@kyoh86/denops-bind-params@0.0.2";
-import { kebabToCamel } from "jsr:@kyoh86/denops-bind-params@0.0.2/keycase";
-import { ensure, is } from "jsr:@core/unknownutil@3.18.1";
+import { Denops } from "jsr:@denops/core@~6.1.0";
+import { bindDispatcher } from "jsr:@kyoh86/denops-bind-params@~0.0.2";
+import { kebabToCamel } from "jsr:@kyoh86/denops-bind-params@~0.0.2/keycase";
+import { ensure, is } from "jsr:@core/unknownutil@~3.18.1";
 import { parse } from "https://deno.land/x/denops_std@v6.5.0/argument/mod.ts";
 import { isPlayParams, play } from "./command/play.ts";
 
