@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/core@~7.0.0";
-import { is, type Predicate } from "jsr:@core/unknownutil@~4.0.0";
+import { is, type Predicate } from "jsr:@core/unknownutil@~4.1.0";
 
 type PlayParams = {
   mods: string;
