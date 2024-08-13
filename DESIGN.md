@@ -3,13 +3,12 @@
 jqplay handles the following types of buffer:
 
 - filter buffer
-  - name: `jqfilter://<source_type>/<source_name>?session_id=<session_id>`
+  - name: `jqplay://query;kind=<source_kind>&name=<source_name>`
   - parameters:
-    - `<source_type>`: file, empty, buffer, url, exec
+    - `<source_kind>`: file, empty, buffer, url, exec
     - `<source_name>`: file path, buffer name, URL, command
-    - `<session_id>`: session ID. This is a unique ID for each session.
 - output buffer
-  - `jqoutput://session/<session_id>`
+  - `jqplay://output;session=<session_id>`
 
 and supports the following sources:
 
@@ -23,9 +22,7 @@ and supports the following sources:
 
 ### play
 
-- create a new session for the given file
-- create a new filter buffer for the session
-- create a new output buffer for the session
+- create a new session
 
 ### command:play
 
@@ -38,3 +35,9 @@ and supports the following sources:
 - write the output to the output buffer
 
 ### play
+
+## Commands
+
+```
+:[range]Jqplay [{file}]
+```
