@@ -1,40 +1,35 @@
 // deno-lint-ignore no-explicit-any
 type Abortable = (signal: AbortSignal, ...args: any) => void | Promise<void>;
 
-type ParametersWithoutSignal<T extends Abortable> = T extends
+type Params<T extends Abortable> = T extends
   (signal: AbortSignal, ...args: infer P) => void ? P : never;
 
-type DebouncedFunction<T extends Abortable> = (
-  ...args: ParametersWithoutSignal<T>
-) => void;
+type Debounced<T extends Abortable> = (...args: Params<T>) => void;
 
-export function debounceWithAbort<T extends Abortable>(
+function debounceWithAbort<T extends Abortable>(
   func: T,
   delay: number,
-): DebouncedFunction<T> {
-  const subscriber = new EventTarget();
+): Debounced<T> {
+  const notif = new EventTarget();
 
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timeoutId: number = 0;
   let running: Promise<void> | null = null;
 
-  return (...args: ParametersWithoutSignal<T>): void => {
-    // 以前のタイマーをクリア
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
+  return (...args: Params<T>): void => {
+    // debounce待機中のtimeoutをキャンセル
+    clearTimeout(timeoutId);
 
-    // 以前のリクエストをキャンセル
-    subscriber.dispatchEvent(new CustomEvent("abort"));
-
-    // 新しいタイマーを設定
+    // 新しいdebounceタイマーを設定
     timeoutId = setTimeout(async () => {
-      const controller = new AbortController();
-      const signal = controller.signal;
+      // 前の処理をキャンセル
+      notif.dispatchEvent(new CustomEvent("abort"));
 
-      // イベントリスナーを設定
-      subscriber.addEventListener("abort", () => controller.abort(), {
-        signal,
-      });
+      // キャンセル用のイベントリスナーを設定
+      const abort = new AbortController();
+      const signal = abort.signal;
+      notif.addEventListener("abort", () => {
+        abort.abort();
+      }, { signal });
 
       // 前の処理が完了するのを待つ
       if (running) {
@@ -50,14 +45,15 @@ export function debounceWithAbort<T extends Abortable>(
             // 中断が発生した場合はエラーを無視
             // noop
           } else {
-            throw error;
+            console.error(error);
           }
         } finally {
-          // タイマーとコントローラをリセット
-          timeoutId = null;
+          // 待機する処理をリセット
           running = null;
         }
       })();
     }, delay);
   };
 }
+
+export { debounceWithAbort };
