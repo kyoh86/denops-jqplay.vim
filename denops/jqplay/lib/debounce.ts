@@ -39,6 +39,9 @@ function debounceWithAbort<T extends Abortable>(
       // 新しい処理を開始
       running = (async () => {
         try {
+          if (signal.aborted) {
+            return;
+          }
           await func(signal, ...args);
         } catch (error) {
           if (error.name === "AbortError") {

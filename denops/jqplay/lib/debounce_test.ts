@@ -9,10 +9,6 @@ Deno.test("withAbort function should debounce calls ", async () => {
   let callCount = 0;
 
   const mockFunction = async (signal: AbortSignal, value: string) => {
-    if (signal.aborted) {
-      return;
-    }
-
     callCount++;
     await delay(200); // Simulate some async work
 
