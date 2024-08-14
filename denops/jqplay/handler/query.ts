@@ -4,17 +4,39 @@ import { ensure, is } from "jsr:@core/unknownutil@~4.2.0";
 import * as buffer from "jsr:@denops/std@~7.0.1/buffer";
 import * as variable from "jsr:@denops/std@~7.0.1/variable";
 import * as option from "jsr:@denops/std@~7.0.1/option";
-import { NAMESPACE_URL, v5 as uuid } from "jsr:@std/uuid@~1.0.0";
+import { v1 as uuid } from "jsr:@std/uuid@~1.0.0";
 import { TextLineStream } from "jsr:@std/streams@~1.0.1";
 import { Filetype } from "./filetype.ts";
 import { debounceWithAbort } from "../lib/debounce.ts";
 import { bufnr, getbufline, getcwd } from "jsr:@denops/std@~7.0.1/function";
+import {
+  BufferWritingStream,
+  ChunkLinesTransformStream,
+} from "../lib/stream.ts";
 
-export async function loadQueryBuffer(
-  denops: Denops,
-  router: Router,
-  buf: Buffer,
-) {
+type BufVars = { src_kind: string; src_name: string; session: string };
+
+async function getBufVars(denops: Denops, bufnr: number): Promise<BufVars> {
+  const get = async (name: string) =>
+    ensure(await variable.b.get(denops, name), is.String);
+  return await buffer.ensure(denops, bufnr, async () => {
+    return {
+      src_kind: await get("jqplay_src_kind"),
+      src_name: await get("jqplay_src_name"),
+      session: await get("jqplay_session"),
+    };
+  });
+}
+
+async function setBufVars(denops: Denops, bufnr: number, vars: BufVars) {
+  await buffer.ensure(denops, bufnr, async () => {
+    await variable.b.set(denops, "jqplay_src_kind", vars.src_kind);
+    await variable.b.set(denops, "jqplay_src_name", vars.src_name);
+    await variable.b.set(denops, "jqplay_session", vars.session);
+  });
+}
+
+export async function loadQueryBuffer(denops: Denops, buf: Buffer) {
   const params = ensure(
     buf.bufname.params,
     is.ObjectOf({
@@ -23,22 +45,17 @@ export async function loadQueryBuffer(
     }),
   );
 
-  const session = await uuid.generate(
-    NAMESPACE_URL,
-    new TextEncoder().encode(params.name),
-  );
-
-  // store params
+  // set filetype
   await buffer.ensure(denops, buf.bufnr, async () => {
     await option.filetype.setLocal(denops, Filetype.Query);
-    await option.modifiable.setLocal(denops, true);
-    await variable.b.set(denops, "jqplay_source_kind", params.kind);
-    await variable.b.set(denops, "jqplay_source_name", params.name);
-    await variable.b.set(denops, "jqplay_session", session);
   });
 
-  // create new buffer to output
-  await router.preload(denops, "output", { session });
+  // store params
+  await setBufVars(denops, buf.bufnr, {
+    src_kind: params.kind,
+    src_name: params.name,
+    session: uuid.generate(),
+  });
 }
 
 async function processQueryCore(
@@ -47,40 +64,25 @@ async function processQueryCore(
   router: Router,
   queryBuf: Buffer,
 ) {
-  const { source_name, session } = await buffer.ensure(
-    denops,
-    queryBuf.bufnr,
-    async () => {
-      const source_kind = ensure(
-        await variable.b.get(denops, "jqplay_source_kind"),
-        is.String,
-      );
-      const source_name = ensure(
-        await variable.b.get(denops, "jqplay_source_name"),
-        is.String,
-      );
-      const session = ensure(
-        await variable.b.get(denops, "jqplay_session"),
-        is.String,
-      );
-      return { source_kind, source_name, session };
-    },
-  );
-  if (signal.aborted) {
-    return;
-  }
+  const { src_name, session } = await getBufVars(denops, queryBuf.bufnr);
+
+  if (signal.aborted) return;
+
+  const query = await getbufline(denops, queryBuf.bufnr, 1, "$");
+
+  if (signal.aborted) return;
 
   const outputBufname = await router.drop(denops, "output", "horizontal", {
     session,
   });
   const outputBufnr = await bufnr(denops, outputBufname);
-  await buffer.replace(denops, outputBufnr, ["Processing..."], {});
 
-  const query = await getbufline(denops, 1, "$");
+  if (signal.aborted) return;
+
   const cmd = new Deno.Command( // TODO: cofigurable command
     "jq",
     {
-      args: [query.join("\n")],
+      args: [query.join("\n").trim()],
       cwd: await getcwd(denops),
       signal: signal,
       stdin: "piped",
@@ -88,46 +90,15 @@ async function processQueryCore(
     },
   );
   const process = cmd.spawn();
-  const source = await Deno.open(source_name, { read: true });
-  let lines: string[] = [];
-  const chunkSize = 50;
-  const chunks = new TransformStream<string, string[]>({
-    transform(chunk, controller) {
-      lines.push(chunk);
-      if (lines.length > chunkSize) {
-        controller.enqueue(lines);
-        lines = [];
-      }
-    },
-    flush(controller) {
-      if (lines.length > 0) {
-        controller.enqueue(lines);
-      }
-    },
-  });
-  let lnum = 0;
-  const output = new WritableStream<string[]>({
-    write: async (chunk, _controller) => {
-      if (lnum == 0) {
-        await buffer.replace(denops, outputBufnr, chunk, {});
-      } else {
-        await buffer.append(denops, outputBufnr, chunk, { lnum: lnum });
-      }
-      lnum += chunk.length;
-    },
-  });
-
-  const { promise, resolve } = Promise.withResolvers<void>();
-  signal.addEventListener("abort", () => resolve());
-
+  const source = await Deno.open(src_name, { read: true });
   await Promise.all([
-    promise,
+    process.status,
     source.readable.pipeTo(process.stdin),
     process.stdout
       .pipeThrough(new TextDecoderStream())
       .pipeThrough(new TextLineStream())
-      .pipeThrough(chunks)
-      .pipeTo(output),
+      .pipeThrough(new ChunkLinesTransformStream())
+      .pipeTo(new BufferWritingStream(denops, outputBufnr)),
   ]);
 }
 

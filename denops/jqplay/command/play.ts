@@ -14,13 +14,8 @@ export const isPlayParams = is.ObjectOf({
 }) satisfies Predicate<PlayParams>;
 
 export async function play(denops: Denops, router: Router, params: PlayParams) {
-  const session = await uuid.generate(
-    NAMESPACE_DNS,
-    new TextEncoder().encode(params.file),
-  );
   await router.open(denops, "query", params.mods, {
     kind: "file",
     name: params.file,
-    session,
   });
 }

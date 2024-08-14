@@ -11,7 +11,7 @@ export const main: Entrypoint = async (denops) => {
   const router = new Router("jqplay");
   router.handle("query", {
     load: async (buf: Buffer) => {
-      await loadQueryBuffer(denops, router, buf);
+      await loadQueryBuffer(denops, buf);
     },
     save: (buf: Buffer) => {
       processQuery(denops, router, buf);
