@@ -1,3 +1,5 @@
+import { is, maybe } from "jsr:@core/unknownutil@^4.0.0";
+
 // deno-lint-ignore no-explicit-any
 type Abortable = (signal: AbortSignal, ...args: any) => void | Promise<void>;
 
@@ -44,7 +46,8 @@ function debounceWithAbort<T extends Abortable>(
           }
           await func(signal, ...args);
         } catch (error) {
-          if (error.name === "AbortError") {
+          const maybeAbort = maybe(error, is.ObjectOf({ name: is.String }));
+          if (maybeAbort && maybeAbort.name === "AbortError") {
             // 中断が発生した場合はエラーを無視
             // noop
           } else {
