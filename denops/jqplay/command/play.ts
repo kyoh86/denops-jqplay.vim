@@ -3,7 +3,7 @@ import {
   type BufferOpener,
   isBufferOpener,
   type Router,
-} from "jsr:@kyoh86/denops-router@~0.3.0-alpha.6";
+} from "jsr:@kyoh86/denops-router@~0.3.0";
 import { is, type Predicate } from "jsr:@core/unknownutil@~4.3.0";
 
 type PlayParams = { file: string } & BufferOpener;

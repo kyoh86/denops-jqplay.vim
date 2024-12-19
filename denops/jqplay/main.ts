@@ -2,7 +2,7 @@ import type { Entrypoint } from "jsr:@denops/core@~7.0.0";
 import { bindDispatcher } from "jsr:@kyoh86/denops-bind-params@~0.0.2";
 import { ensure, is } from "jsr:@core/unknownutil@~4.3.0";
 import { parse } from "jsr:@denops/std@~7.4.0/argument";
-import { type Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.0-alpha.6";
+import { type Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.0";
 import { fnamemodify } from "jsr:@denops/std@~7.4.0/function";
 
 import { isPlayParams, play } from "./command/play.ts";

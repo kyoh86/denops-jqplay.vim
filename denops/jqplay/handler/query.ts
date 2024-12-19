@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/std@~7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.0-alpha.6";
+import type { Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.0";
 import { ensure, is } from "jsr:@core/unknownutil@~4.3.0";
 import * as path from "jsr:@std/path@~1.0.8";
 import * as buffer from "jsr:@denops/std@~7.4.0/buffer";
