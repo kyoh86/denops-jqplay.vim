@@ -1,4 +1,4 @@
-*jqplay.txt* Run 'jq' interactively in Vim/Neovim
+*jqplay.txt* execute 'jq' interactively in Vim/Neovim
                                                   *jqplay* *denops-jqplay.txt*
 
 Author: kyoh86 <me@kyoh86.dev>
@@ -9,26 +9,45 @@ License: MIT License
                                                              *jqplay-contents*
 Contents ~
 
-Install                          |jqplay-install|
-Setup                            |jqplay-setup|
-Function                         |jqplay-function|
-Commands                         |jqplay-commands|
-Keymaps                          |jqplay-keymaps|
-API                              |jqplay-api|
+Install                                                  |jqplay-install|
+Setup                                                    |jqplay-setup|
+Usage                                                    |jqplay-usage|
+Function                                                 |jqplay-function|
+Commands                                                 |jqplay-commands|
+Options                                                  |jqplay-options|
+Keymaps                                                  |jqplay-keymaps|
 
 
 ==============================================================================
                                                               *jqplay-install*
 Install ~
 
-You need to install |denops.vim| as a dependency.
+Please install |denops.vim| as a dependency.
+Also, you need to install the 'jq' command as an external dependency.
 
 * vim-denops/denops.vim https://github.com/vim-denops/denops.vim
+* jqlang/jq https://jqlang.github.io/jq/
 
 
 ==============================================================================
                                                                 *jqplay-setup*
 Setup ~
+
+Use the |jqplay#setup()| function.
+
+
+==============================================================================
+                                                                *jqplay-usage*
+Usage ~
+
+Start jqplay with |jqplay#file()|, |jqplay#buffer()|, |:Jqplay|, or
+|:Jqplay_file|.
+
+Enter a jq filter in the opened window.
+When you save with |:write|, the filter result is displayed in a new window.
+
+By rewriting the contents of the filter and saving it again with |:write|,
+the result is updated.
 
 
 ==============================================================================
@@ -36,14 +55,130 @@ Setup ~
 Function ~
 
                                                               *jqplay#setup()*
-jqplay#setup()
+jqplay#setup({opts})
 
-	TODO
+    Set default values for arguments of other functions.
+    Since all provided commands call the corresponding functions,
+    adjust all options with this function.
+
+    {opts} is a dictionary with function names as keys and options to pass
+    as values.
+
+    For example, you can set it for the jqplay#file({opts}) function as
+    follows. >vim
+        call jqplay#setup({ "file": { "split": "above" } })
+<
+
+    With this setting, the "split" option is passed as "above" when calling
+    the |jqplay#file()| function.
+
+    The value set here can be overwritten with a new value when calling the
+    function. >vim
+        call jqplay#setup({ "file": { "split": "above" } })
+
+    call jqplay#file()
+        -- "split" is processed as "above"
+
+    call jqplay#file({ "split": "none" })
+        -- "split" is processed as "none"
+<
+
+    You do not need to set settings for all functions. If you do not set them,
+    the default values will be used.
+    Also, you can set across all functions by specifying `_` in the function
+    name. >vim
+        call jqplay#setup({ "_": { "split": "above" } })
+<
+
+                                                             *jqplay#buffer()*
+jqplay#buffer({opts})
+
+    Open a new buffer and execute the 'jq' command interactively.
+
+    {opts} is a dictionary that can have the following keys.
+
+                                               *jqplay#buffer()-option-source*
+    - "source": number
+        The buffer number that contains the JSON data.
+        Default is 0 (current buffer).
+
+                                                *jqplay#buffer()-option-split*
+    - "split": string
+        The direction in which to split the window.
+        Default is "below".
+        See |jqplay-option-split|.
+
+                                                               *jqplay#file()*
+jqplay#file({opts})
+
+    Open a new buffer and execute the 'jq' command interactively.
+
+    {opts} is a dictionary that can have the following keys.
+
+                                                 *jqplay#file()-option-source*
+
+    - "source": string (required)
+        Specifies the path to the JSON file.
+
+                                                  *jqplay#file()-option-split*
+    - "split": string
+        The direction in which to split the window.
+        Default is "below".
+        See |jqplay-option-split|.
 
 
 ==============================================================================
                                                              *jqplay-commands*
 Commands ~
+
+                                                                     *:Jqplay*
+:Jqplay [{opts}]
+
+    Call the |jqplay#buffer()| function.
+    {opts} can have the following flags.
+
+        --source={path} : number
+            Specifies the buffer number that contains the JSON data.
+            Default is 0 (current buffer).
+
+        --split={direction} : string
+            The direction in which to split the window.
+            Default is "none".
+            See |jqplay-option-split|.
+
+                                                                *:Jqplay_file*
+:Jqplay [{opts}] {file}
+
+    Call the |jqplay#file()| function.
+    {opts} can have the following flags.
+
+        --split={direction} : string
+            The direction in which to split the window.
+            Default is "none".
+            See |jqplay-option-split|.
+
+
+==============================================================================
+                                                              *jqplay-options*
+Options ~
+
+The following options can be used with the functions and commands.
+
+                                                         *jqplay-option-split*
+split : string
+    The direction in which to split the window.
+    The following values can be specified.
+
+    - "none"           : Do not split the window.
+    - "top"            : Split the window at the top.
+    - "above"          : Split the window above the current window.
+    - "below"          : Split the window below the current window.
+    - "bottom"         : Split the window at the bottom.
+    - "leftmost"       : Split the window at the leftmost.
+    - "left"           : Split the window to the left of the current window.
+    - "right"          : Split the window to the right of the current window.
+	- "rightmost"      : Split the window at the rightmost.
+	- "tab"            : Split the window in a new tab.
 
 
 ==============================================================================
@@ -57,4 +192,4 @@ API ~
 
 
 ==============================================================================
-" vim:tw=78:ts=8:sw=8:ft=help:norl:noet:fen:
+" vim:tw=78:ts=4:sw=4:sts=4:et:ft=help:norl:noet:fen:

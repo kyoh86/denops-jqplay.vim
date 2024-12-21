@@ -1,14 +1,15 @@
 import type { Denops } from "jsr:@denops/std@~7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.0";
+import type { Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.2";
 import { ensure, is } from "jsr:@core/unknownutil@~4.3.0";
 import * as path from "jsr:@std/path@~1.0.8";
 import * as buffer from "jsr:@denops/std@~7.4.0/buffer";
 import * as variable from "jsr:@denops/std@~7.4.0/variable";
 import * as option from "jsr:@denops/std@~7.4.0/option";
+import * as fn from "jsr:@denops/std@~7.4.0/function";
 import { TextLineStream } from "jsr:@std/streams@~1.0.1";
+
 import { Filetype } from "./filetype.ts";
 import { debounceWithAbort } from "../lib/debounce.ts";
-import * as fn from "jsr:@denops/std@~7.4.0/function";
 import {
   BufferWritingStream,
   ChunkLinesTransformStream,
@@ -41,8 +42,8 @@ export async function loadQueryBuffer(denops: Denops, buf: Buffer) {
   const params = ensure(
     buf.bufname.params,
     is.ObjectOf({
-      kind: is.LiteralOf("file"),
-      name: is.String,
+      kind: is.LiteralOneOf(["file", "buffer"]),
+      source: is.String,
     }),
   );
 
@@ -52,7 +53,7 @@ export async function loadQueryBuffer(denops: Denops, buf: Buffer) {
   // store params
   await setBufVars(denops, buf.bufnr, {
     src_kind: params.kind,
-    src_name: params.name,
+    src_name: params.source,
     session: await getNewSessionId(denops),
   });
 }
@@ -64,9 +65,13 @@ async function processQueryCore(
   tempDir: string,
   queryBuf: Buffer,
 ) {
-  const { src_name, session } = await getBufVars(denops, queryBuf.bufnr);
+  const { src_kind, src_name, session } = await getBufVars(
+    denops,
+    queryBuf.bufnr,
+  );
 
   if (signal.aborted) return;
+  console.log(await variable.v.get(denops, "cmdarg"));
 
   const filterPath = path.join(tempDir, session);
   const query = await fn.getbufline(denops, queryBuf.bufnr, 1, "$");
@@ -93,12 +98,65 @@ async function processQueryCore(
     },
   );
   const process = cmd.spawn();
-  const source = await Deno.open(src_name, { read: true });
+
   await option.readonly.setBuffer(denops, outputBufnr, false);
+  try {
+    switch (src_kind) {
+      case "buffer":
+        await processQueryBuffer(denops, process, src_name, outputBufnr);
+        break;
+      case "file":
+        await processQueryFile(denops, process, src_name, outputBufnr);
+        break;
+    }
+  } finally {
+    await option.readonly.setBuffer(denops, outputBufnr, true);
+  }
+}
+
+const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
+
+async function processQueryBuffer(
+  denops: Denops,
+  process: Deno.ChildProcess,
+  inputBuffer: string,
+  outputBufnr: number,
+) {
+  const bufnr = Number(inputBuffer);
+  const lines = await fn.getbufline(denops, bufnr, 1, "$");
+
+  // バッファ内容を改行で結合
+  const inputText = lines.join("\n") + "\n";
+  const encoder = new TextEncoder();
+  const inputData = encoder.encode(inputText);
+
+  // stdinへ一括書き込み
+  const writer = process.stdin.getWriter();
+  await writer.write(inputData);
+  await writer.close();
+
+  // stdoutの結果をoutputBufnrへ書き込み
+  await Promise.all([
+    process.status,
+    process.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+      .pipeThrough(new ChunkLinesTransformStream())
+      .pipeTo(new BufferWritingStream(denops, outputBufnr)),
+  ]);
+}
+
+async function processQueryFile(
+  denops: Denops,
+  process: Deno.ChildProcess,
+  src: string,
+  outputBufnr: number,
+) {
+  const file = await Deno.open(src, { read: true });
   try {
     await Promise.all([
       process.status,
-      source.readable.pipeTo(process.stdin),
+      file.readable.pipeTo(process.stdin),
       process.stdout
         .pipeThrough(new TextDecoderStream())
         .pipeThrough(new TextLineStream())
@@ -106,11 +164,9 @@ async function processQueryCore(
         .pipeTo(new BufferWritingStream(denops, outputBufnr)),
     ]);
   } finally {
-    await option.readonly.setBuffer(denops, outputBufnr, true);
+    file.close();
   }
 }
-
-const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
 
 export function processQuery(
   denops: Denops,

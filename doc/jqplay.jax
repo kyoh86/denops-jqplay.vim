@@ -1,0 +1,184 @@
+*jqplay.txt* 'jq'をVim/Neovimでインタラクティブに実行する
+                                                  *jqplay* *denops-jqplay.jax*
+
+Author: kyoh86 <me@kyoh86.dev>
+License: MIT License
+
+
+==============================================================================
+                                                             *jqplay-contents*
+目次 ~
+
+インストール                                                |jqplay-install|
+初期設定                                                    |jqplay-setup|
+基本的な使い方                                              |jqplay-usage|
+関数                                                        |jqplay-function|
+コマンド                                                    |jqplay-commands|
+オプション                                                  |jqplay-options|
+キーマップ                                                  |jqplay-keymaps|
+
+
+==============================================================================
+                                                              *jqplay-install*
+インストール ~
+
+依存するプラグインとして |denops.vim| をインストールしてください。
+また、外部依存として'jq'コマンドのインストールが必要です。
+
+* vim-denops/denops.vim https://github.com/vim-denops/denops.vim
+* jqlang/jq https://jqlang.github.io/jq/
+
+
+==============================================================================
+                                                                *jqplay-setup*
+初期設定 ~
+
+|jqplay#setup()| 関数を使用してください。
+
+
+==============================================================================
+                                                                *jqplay-usage*
+基本的な使い方 ~
+
+|jqplay#file()|、|jqplay#buffer()|、|:Jqplay|または|:Jqplay_file|を使用して、
+jqplayを開始します。
+
+開いたウィンドウに、jqのフィルタを入力してください。
+|:write|で保存すると、フィルタ結果が新しいウィンドウに表示されます。
+
+フィルタの内容を書き換えて、再度 |:write| で保存することで、結果が
+更新されます。
+
+
+==============================================================================
+                                                             *jqplay-function*
+関数 ~
+
+                                                              *jqplay#setup()*
+jqplay#setup({opts})
+
+    この関数で、他の各関数の引数のデフォルト値を設定することができます。
+    提供しているコマンド類も、それぞれ対応する関数を呼んでいるため、
+    すべてのオプションはこの関数で調整します。
+
+    {opts} は関数名をキー、渡すオプションを値に持つ辞書です。
+
+    例えば、jqplay#file({opts}) 関数に対して、以下のように設定できます。 >vim
+        call jqplay#setup({ "file": { "split": "above" } })
+<
+
+    このように設定すると、 |jqplay#file()| 関数の呼び出しで "split" オプション
+    に "above" が渡されます。
+
+    ここで設定した値は、関数の呼び出し時に新しい値で上書きできます。 >vim
+        call jqplay#setup({ "file": { "split": "above" } })
+
+        call jqplay#file()
+            -- "split" は "above" として処理される
+
+        call jqplay#file({ "split": "none" })
+            -- "split" は "none" として処理される
+<
+
+    すべての関数に対して設定を行う必要はありません。設定しない場合はデフォルト
+    値が使用されます。
+    また、関数名に`_`を指定して、すべての関数を横断して設定できます。 >vim
+        call jqplay#setup({ "_": { "split": "above" } })
+<
+
+                                                             *jqplay#buffer()*
+jqplay#buffer({opt})
+
+    対象となるJSONデータを含むバッファを指定してjqplayを開始します。
+
+    {opt} は以下のようなフィールドを持つ辞書です。
+
+                                               *jqplay#buffer()-option-source*
+        {source} : 文字列
+            JSONデータを含むバッファ番号を指定します。
+            デフォルト: 0（現在のバッファ）
+
+                                                *jqplay#buffer()-option-split*
+        {split} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+
+                                                               *jqplay#file()*
+jqplay#file({opt})
+
+    対象となるJSONファイルを指定してjqplayを開始します。
+
+    {opt} は以下のようなフィールドを持つ辞書です。
+
+                                                 *jqplay#file()-option-source*
+        {source} : 文字列 (必須)
+            JSONファイルのパスを指定します。
+
+                                                  *jqplay#file()-option-split*
+        {split} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+
+
+==============================================================================
+                                                             *jqplay-commands*
+コマンド ~
+                                                                     *:Jqplay*
+:Jqplay [{opts}]
+
+    |jqplay#buffer()|を呼び出します。
+    {opts}には以下を指定できます
+
+        --source={num} : 数値
+            JSONデータを含むバッファ番号を指定します。
+            デフォルト: 0（現在のバッファ）
+
+        --split={direction} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+
+                                                                *:Jqplay_file*
+:Jqplay [{opts}] {file}
+
+    |jqplay#file()|を呼び出します。
+    {file} に指定したファイルが "source" として指定されます。
+    {opts}には以下を指定できます
+
+        --split={direction} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+
+==============================================================================
+                                                              *jqplay-options*
+オプション ~
+
+各関数、各コマンドで指定するオプションの値の詳細は以下の通りです。
+
+                                                         *jqplay-option-split*
+split : 文字列
+    新しく開くバッファウィンドウの分割方法として、以下のいずれかを
+    指定します。
+
+    - "none"       : 分割せず現在のウインドウに表示
+    - "top"        : 一番上に分割
+    - "above"      : 現在のウインドウの上に分割
+    - "below"      : 現在のウインドウの下に分割
+    - "bottom"     : 一番下に分割
+    - "leftmost"   : 一番左に分割
+    - "left"       : 現在のウインドウの左に分割
+    - "right"      : 現在のウインドウの右に分割
+    - "rightmost"  : 一番右に分割
+    - "tab"        : 新しいタブページを作成
+
+
+==============================================================================
+                                                              *jqplay-keymaps*
+キーマップ ~
+
+
+==============================================================================
+" vim:tw=78:ts=4:sw=4:sts=4:et:ft=help:norl:noet:fen:
