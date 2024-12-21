@@ -71,7 +71,6 @@ async function processQueryCore(
   );
 
   if (signal.aborted) return;
-  console.log(await variable.v.get(denops, "cmdarg"));
 
   const filterPath = path.join(tempDir, session);
   const query = await fn.getbufline(denops, queryBuf.bufnr, 1, "$");
