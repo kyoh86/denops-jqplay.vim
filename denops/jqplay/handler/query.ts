@@ -1,12 +1,12 @@
-import type { Denops } from "jsr:@denops/std@~7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@~0.3.2";
-import { ensure, is } from "jsr:@core/unknownutil@~4.3.0";
-import * as path from "jsr:@std/path@~1.0.8";
-import * as buffer from "jsr:@denops/std@~7.4.0/buffer";
-import * as variable from "jsr:@denops/std@~7.4.0/variable";
-import * as option from "jsr:@denops/std@~7.4.0/option";
-import * as fn from "jsr:@denops/std@~7.4.0/function";
-import { TextLineStream } from "jsr:@std/streams@~1.0.1";
+import type { Denops } from "jsr:@denops/std@7.4.0";
+import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.3";
+import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
+import * as path from "jsr:@std/path@1.0.8";
+import * as buffer from "jsr:@denops/std@7.4.0/buffer";
+import * as variable from "jsr:@denops/std@7.4.0/variable";
+import * as option from "jsr:@denops/std@7.4.0/option";
+import * as fn from "jsr:@denops/std@7.4.0/function";
+import { TextLineStream } from "jsr:@std/streams@1.0.8";
 
 import { Filetype } from "./filetype.ts";
 import { debounceWithAbort } from "../lib/debounce.ts";
@@ -16,15 +16,56 @@ import {
 } from "../lib/stream.ts";
 import { getNewSessionId } from "../lib/session.ts";
 
-type BufVars = { src_kind: string; src_name: string; session: string };
+type BufVars = { session: string };
+
+async function parseBufParams(denops: Denops, buf: Buffer) {
+  const kind = ensure(
+    buf.bufname.params?.kind,
+    is.UnionOf([is.LiteralOf("file"), is.LiteralOf("buffer")]),
+    {
+      message:
+        `{kind} should be 'file' or 'buffer': ${buf.bufname.params?.kind}`,
+    },
+  );
+  const sourceStr = ensure(
+    buf.bufname.params?.source,
+    is.String,
+    {
+      message: `{source} required`,
+    },
+  );
+  switch (kind) {
+    case "buffer": {
+      const source = parseInt(sourceStr, 10);
+      if (isNaN(source)) {
+        throw new Error(
+          `{source} should be a number: ${sourceStr}`,
+        );
+      }
+      if (!await fn.bufloaded(denops, source)) {
+        throw new Error(
+          `buffer ${source} is not loaded`,
+        );
+      }
+      return { kind, source };
+    }
+    case "file": {
+      path.parse(sourceStr);
+      if (!await fn.filereadable(denops, sourceStr)) {
+        throw new Error(
+          `file ${sourceStr} is not readable`,
+        );
+      }
+      return { kind, source: path.normalize(sourceStr) };
+    }
+  }
+}
 
 async function getBufVars(denops: Denops, bufnr: number): Promise<BufVars> {
   const get = async (name: string) =>
     ensure(await variable.b.get(denops, name), is.String);
   return await buffer.ensure(denops, bufnr, async () => {
     return {
-      src_kind: await get("jqplay_src_kind"),
-      src_name: await get("jqplay_src_name"),
       session: await get("jqplay_session"),
     };
   });
@@ -32,28 +73,18 @@ async function getBufVars(denops: Denops, bufnr: number): Promise<BufVars> {
 
 async function setBufVars(denops: Denops, bufnr: number, vars: BufVars) {
   await buffer.ensure(denops, bufnr, async () => {
-    await variable.b.set(denops, "jqplay_src_kind", vars.src_kind);
-    await variable.b.set(denops, "jqplay_src_name", vars.src_name);
     await variable.b.set(denops, "jqplay_session", vars.session);
   });
 }
 
 export async function loadQueryBuffer(denops: Denops, buf: Buffer) {
-  const params = ensure(
-    buf.bufname.params,
-    is.ObjectOf({
-      kind: is.LiteralOneOf(["file", "buffer"]),
-      source: is.String,
-    }),
-  );
+  await parseBufParams(denops, buf);
 
   // set filetype
   await option.filetype.setBuffer(denops, buf.bufnr, Filetype.Query);
 
   // store params
   await setBufVars(denops, buf.bufnr, {
-    src_kind: params.kind,
-    src_name: params.source,
     session: await getNewSessionId(denops),
   });
 }
@@ -63,17 +94,18 @@ async function processQueryCore(
   denops: Denops,
   router: Router,
   tempDir: string,
-  queryBuf: Buffer,
+  buf: Buffer,
 ) {
-  const { src_kind, src_name, session } = await getBufVars(
+  const { session } = await getBufVars(
     denops,
-    queryBuf.bufnr,
+    buf.bufnr,
   );
+  const params = await parseBufParams(denops, buf);
 
   if (signal.aborted) return;
 
   const filterPath = path.join(tempDir, session);
-  const query = await fn.getbufline(denops, queryBuf.bufnr, 1, "$");
+  const query = await fn.getbufline(denops, buf.bufnr, 1, "$");
   await fn.writefile(denops, query, filterPath, "");
 
   if (signal.aborted) return;
@@ -89,7 +121,13 @@ async function processQueryCore(
   const cmd = new Deno.Command( // TODO: cofigurable command
     "jq",
     {
-      args: ["--from-file", filterPath],
+      args: [
+        "--from-file",
+        filterPath,
+        "--monochrome-output",
+        "--unbuffered",
+        "--exit-status",
+      ],
       cwd: await fn.getcwd(denops),
       signal: signal,
       stdin: "piped",
@@ -100,12 +138,12 @@ async function processQueryCore(
 
   await option.readonly.setBuffer(denops, outputBufnr, false);
   try {
-    switch (src_kind) {
+    switch (params.kind) {
       case "buffer":
-        await processQueryBuffer(denops, process, src_name, outputBufnr);
+        await processQueryBuffer(denops, process, params.source, outputBufnr);
         break;
       case "file":
-        await processQueryFile(denops, process, src_name, outputBufnr);
+        await processQueryFile(denops, process, params.source, outputBufnr);
         break;
     }
   } finally {
@@ -118,11 +156,10 @@ const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
 async function processQueryBuffer(
   denops: Denops,
   process: Deno.ChildProcess,
-  inputBuffer: string,
+  inputBufnr: number,
   outputBufnr: number,
 ) {
-  const bufnr = Number(inputBuffer);
-  const lines = await fn.getbufline(denops, bufnr, 1, "$");
+  const lines = await fn.getbufline(denops, inputBufnr, 1, "$");
 
   // バッファ内容を改行で結合
   const inputText = lines.join("\n") + "\n";

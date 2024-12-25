@@ -1,10 +1,10 @@
-import type { Denops } from "jsr:@denops/core@~7.0.0";
+import type { Denops } from "jsr:@denops/core@7.0.1";
 import {
   type BufferOpener,
   isBufferOpener,
   type Router,
-} from "jsr:@kyoh86/denops-router@~0.3.2";
-import { is, type Predicate } from "jsr:@core/unknownutil@~4.3.0";
+} from "jsr:@kyoh86/denops-router@0.3.3";
+import { is, type Predicate } from "jsr:@core/unknownutil@4.3.0";
 
 type FileParams = { source: string } & BufferOpener;
 

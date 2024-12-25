@@ -28,6 +28,13 @@ License: MIT License
 * vim-denops/denops.vim https://github.com/vim-denops/denops.vim
 * jqlang/jq https://jqlang.github.io/jq/
 
+また、jqのクエリを快適に書くために、各種のsyntaxなどを提供するプラグイン
+などを適宜インストールすることをお勧めします。
+
+* vito-c/jq.vim https://github.com/vito-c/jq.vim
+* bfrg/vim-jq https://github.com/bfrg/vim-jq
+* jq-lsp https://github.com/wader/jq-lsp
+
 
 ==============================================================================
                                                                 *jqplay-setup*

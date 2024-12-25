@@ -1,21 +1,24 @@
-import type { Entrypoint } from "jsr:@denops/core@~7.0.0";
+import type { Entrypoint } from "jsr:@denops/core@7.0.1";
 import {
   bindDispatcher,
   ParamStore,
-} from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.1";
-import { ensure, is, type Predicate } from "jsr:@core/unknownutil@~4.3.0";
-import { parse } from "jsr:@denops/std@~7.4.0/argument";
+} from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.2";
+import {
+  kebabToCamel,
+} from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.2/keycase";
+import { ensure, is, type Predicate } from "jsr:@core/unknownutil@4.3.0";
+import { parse } from "jsr:@denops/std@7.4.0/argument";
 import {
   type Buffer,
   Router,
   type Split as RouterSplit,
-} from "jsr:@kyoh86/denops-router@~0.3.2";
-import { fnamemodify } from "jsr:@denops/std@~7.4.0/function";
-import * as fn from "jsr:@denops/std@~7.4.0/function";
+} from "jsr:@kyoh86/denops-router@0.3.3";
+import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
+import * as fn from "jsr:@denops/std@7.4.0/function";
 
 import { file, isFileParams } from "./command/file.ts";
 import { loadQueryBuffer, processQuery } from "./handler/query.ts";
-import { buffer, isBufferParams } from "./command/buffer.ts";
+import { buffer, type BufferParams, isBufferParams } from "./command/buffer.ts";
 
 type Split =
   | ""
@@ -107,20 +110,34 @@ export const main: Entrypoint = async (denops) => {
       const sources = ensure(uResidues, is.ArrayOf(is.String));
       switch (sources.length) {
         case 0: {
-          const flags = ensure(
+          const flags = kebabToCamel(ensure(
             uFlags,
             is.PartialOf(is.ObjectOf({
               source: is.String,
               split: isSplit,
+              "raw-input": is.Boolean, // Read each line as string instead of JSON
+              slurp: is.Boolean, // Read all inputs into an array and use it as the single input value
+              "compact-output": is.Boolean, // Compact instead of pretty-printed output
+              "raw-output": is.Boolean, // Output strings without escapes and quotes
+              "join-output": is.Boolean, // Implies -r and output without newline after each output
+              "ascii-output": is.Boolean, // Output strings by only ASCII characters using escape sequences
+              "sort-keys": is.Boolean, // Sort keys of each object on output
+              tab: is.Boolean, // Use tabs for indentation
+              indent: is.String, // Use n spaces for indentation (max 7 spaces)
+              stream: is.Boolean, // Parse the input value in streaming fashion
+              "stream-errors": is.Boolean, // Implies --stream and report parse error as an array
+              seq: is.Boolean, // Parse input/output as application/json-seq
             })),
-          );
+          ));
 
-          const bufnr = flags.source
-            ? Number(flags.source)
-            : await fn.bufnr(denops);
+          const { source, split, ...rest } = flags;
+          rest satisfies Partial<BufferParams>;
+
+          const bufnr = source ? Number(source) : await fn.bufnr(denops);
           await bound.buffer({
             source: bufnr,
-            split: splitToRouter(flags.split),
+            split: splitToRouter(split),
+            ...rest,
           });
           break;
         }
