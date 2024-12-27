@@ -16,7 +16,7 @@ import {
   ChunkLinesTransformStream,
 } from "../lib/stream.ts";
 import { getNewSessionId } from "../lib/session.ts";
-import { validateJqParams } from "../types.ts";
+import { type JqParams, validateJqParams } from "../types.ts";
 
 type BufVars = { session: string };
 
@@ -97,9 +97,9 @@ async function processQueryCore(
 
   if (signal.aborted) return;
 
-  const filterPath = path.join(tempDir, session);
+  const filter = path.join(tempDir, session);
   const query = await fn.getbufline(denops, buf.bufnr, 1, "$");
-  await fn.writefile(denops, query, filterPath, "");
+  await fn.writefile(denops, query, filter, "");
 
   if (signal.aborted) return;
 
@@ -108,21 +108,55 @@ async function processQueryCore(
     reuse: true,
   });
   const outputBufnr = await fn.bufnr(denops, bufname);
+  await option.readonly.setBuffer(denops, outputBufnr, false);
 
   if (signal.aborted) return;
 
-  const cmd = new Deno.Command( // TODO: cofigurable command
+  try {
+    switch (params.kind) {
+      case "null": {
+        const { kind: _, ...flags } = params;
+        const p = await callJq(denops, signal, flags, filter, ["--null-input"]);
+        await processQueryNull(denops, p, outputBufnr);
+        break;
+      }
+      case "buffer": {
+        const { kind: _, source, ...flags } = params;
+        const p = await callJq(denops, signal, flags, filter);
+        await processQueryBuffer(denops, p, source, outputBufnr);
+        break;
+      }
+      case "file": {
+        const { kind: _, source, ...flags } = params;
+        const p = await callJq(denops, signal, flags, filter);
+        await processQueryFile(denops, p, source, outputBufnr);
+        break;
+      }
+    }
+  } finally {
+    await option.readonly.setBuffer(denops, outputBufnr, true);
+  }
+}
+
+async function callJq(
+  denops: Denops,
+  signal: AbortSignal,
+  jqParams: JqParams,
+  filter: string,
+  additional?: string[],
+) {
+  const cmd = new Deno.Command(
     "jq",
     {
       args: [
-        "--from-file",
-        filterPath,
         "--monochrome-output",
         "--unbuffered",
         "--exit-status",
-        ...(params.kind === "null" ? ["--null-input"] : []),
+        "--from-file",
+        filter,
+        ...additional ?? [],
         ...[
-          ...Object.entries(params).flatMap(([key, value]) => {
+          ...Object.entries(jqParams).flatMap(([key, value]) => {
             if (value === undefined) {
               return [];
             } else if (value === "") {
@@ -134,32 +168,14 @@ async function processQueryCore(
         ],
       ],
       cwd: await fn.getcwd(denops),
-      signal: signal,
+      signal,
       stdin: "piped",
       stdout: "piped",
     },
   );
   const process = cmd.spawn();
-
-  await option.readonly.setBuffer(denops, outputBufnr, false);
-  try {
-    switch (params.kind) {
-      case "null":
-        await processQueryNull(denops, process, outputBufnr);
-        break;
-      case "buffer":
-        await processQueryBuffer(denops, process, params.source, outputBufnr);
-        break;
-      case "file":
-        await processQueryFile(denops, process, params.source, outputBufnr);
-        break;
-    }
-  } finally {
-    await option.readonly.setBuffer(denops, outputBufnr, true);
-  }
+  return process;
 }
-
-const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
 
 async function processQueryNull(
   denops: Denops,
@@ -227,6 +243,8 @@ async function processQueryFile(
     file.close();
   }
 }
+
+const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
 
 export function processQuery(
   denops: Denops,
