@@ -12,7 +12,7 @@ import {
   type Buffer,
   Router,
   type Split as RouterSplit,
-} from "jsr:@kyoh86/denops-router@0.3.3";
+} from "jsr:@kyoh86/denops-router@0.3.5";
 import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
 import * as fn from "jsr:@denops/std@7.4.0/function";
 
