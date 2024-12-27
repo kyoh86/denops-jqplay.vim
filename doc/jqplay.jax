@@ -47,8 +47,8 @@ License: MIT License
                                                                 *jqplay-usage*
 基本的な使い方 ~
 
-|jqplay#file()|、|jqplay#buffer()|、|:Jqplay|または|:Jqplay_file|を使用して、
-jqplayを開始します。
+|jqplay#file()|、|jqplay#buffer()|、|:JqplayBuffer|または|:JqplayFile|を
+使用して、jqplayを開始します。
 
 開いたウィンドウに、jqのフィルタを入力してください。
 |:write|で保存すると、フィルタ結果が新しいウィンドウに表示されます。
@@ -93,6 +93,8 @@ jqplay#setup({opts})
         call jqplay#setup({ "_": { "split": "above" } })
 <
 
+TODO: jqplay#null({opt})
+TODO: これらの関数の実装
                                                              *jqplay#buffer()*
 jqplay#buffer({opt})
 
@@ -111,6 +113,8 @@ jqplay#buffer({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
+	TODO: jqのオプションを追加する
+
                                                                *jqplay#file()*
 jqplay#file({opt})
 
@@ -128,36 +132,42 @@ jqplay#file({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
+	TODO: jqのオプションを追加する
 
 ==============================================================================
                                                              *jqplay-commands*
 コマンド ~
-                                                                     *:Jqplay*
-:Jqplay [{opts}]
+
+TODO: :JqplayNull
+
+                                                               *:JqplayBuffer*
+:JqplayBuffer [{opts}] {buf}
 
     |jqplay#buffer()|を呼び出します。
+    {buf} に指定したバッファがソースとして指定されます。
+	{buf}に指定できる内容は |bufnr()| に指定するものと同じです。
     {opts}には以下を指定できます
-
-        --source={num} : 数値
-            JSONデータを含むバッファ番号を指定します。
-            デフォルト: 0（現在のバッファ）
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
             デフォルト: "none"
             参照: |jqplay-option-split|
+	
+	TODO: jqのオプションを追加する
 
-                                                                *:Jqplay_file*
-:Jqplay [{opts}] {file}
+                                                                *:JqplayFile*
+:JqplayFile [{opts}] {file}
 
     |jqplay#file()|を呼び出します。
-    {file} に指定したファイルが "source" として指定されます。
+    {file} に指定したファイルがソースとして指定されます。
     {opts}には以下を指定できます
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
             デフォルト: "none"
             参照: |jqplay-option-split|
+
+	TODO: jqのオプションを追加する
 
 ==============================================================================
                                                               *jqplay-options*
