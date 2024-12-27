@@ -20,12 +20,12 @@ export async function buffer(
   router: Router,
   params: BufferParams,
 ) {
-  const { bufnr, ...rest } = params;
+  const { bufnr, split, reuse, ...rest } = params;
   await router.open(
     denops,
     "query",
     { kind: "buffer", source: `${bufnr}`, ...rest },
     "",
-    rest,
+    { split, reuse },
   );
 }

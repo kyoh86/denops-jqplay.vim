@@ -20,12 +20,12 @@ export async function file(
   router: Router,
   params: FileParams,
 ) {
-  const { source, ...rest } = params;
+  const { source, split, reuse, ...rest } = params;
   await router.open(
     denops,
     "query",
-    { kind: "file", source },
+    { kind: "file", source, ...rest },
     "",
-    rest,
+    { split, reuse },
   );
 }
