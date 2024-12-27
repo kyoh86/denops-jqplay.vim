@@ -1,11 +1,12 @@
 import type { Denops } from "jsr:@denops/std@7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.5";
+import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.6";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
 import * as path from "jsr:@std/path@1.0.8";
 import * as buffer from "jsr:@denops/std@7.4.0/buffer";
 import * as variable from "jsr:@denops/std@7.4.0/variable";
 import * as option from "jsr:@denops/std@7.4.0/option";
 import * as fn from "jsr:@denops/std@7.4.0/function";
+import * as v from "jsr:@valibot/valibot@0.42.1";
 import { TextLineStream } from "jsr:@std/streams@1.0.8";
 
 import { Filetype } from "./filetype.ts";
@@ -15,24 +16,20 @@ import {
   ChunkLinesTransformStream,
 } from "../lib/stream.ts";
 import { getNewSessionId } from "../lib/session.ts";
+import { validateJqParams } from "../types.ts";
 
 type BufVars = { session: string };
 
 async function parseBufParams(denops: Denops, buf: Buffer) {
-  const kind = ensure(
-    buf.bufname.params?.kind,
-    is.UnionOf([is.LiteralOf("file"), is.LiteralOf("buffer")]),
-    {
-      message:
-        `{kind} should be 'file' or 'buffer': ${buf.bufname.params?.kind}`,
-    },
-  );
-  const sourceStr = ensure(
-    buf.bufname.params?.source,
-    is.String,
-    {
-      message: `{source} required`,
-    },
+  const { kind, source: sourceStr, ...params } = v.parse(
+    v.intersect([
+      validateJqParams,
+      v.object({
+        kind: v.enum({ file: "file", buffer: "buffer" }),
+        source: v.string(),
+      }),
+    ]),
+    buf.bufname.params,
   );
   switch (kind) {
     case "buffer": {
@@ -47,7 +44,7 @@ async function parseBufParams(denops: Denops, buf: Buffer) {
           `buffer ${source} is not loaded`,
         );
       }
-      return { kind, source };
+      return { kind, source, ...params };
     }
     case "file": {
       path.parse(sourceStr);
@@ -56,7 +53,7 @@ async function parseBufParams(denops: Denops, buf: Buffer) {
           `file ${sourceStr} is not readable`,
         );
       }
-      return { kind, source: path.normalize(sourceStr) };
+      return { kind, source: path.normalize(sourceStr), ...params };
     }
   }
 }
@@ -96,11 +93,8 @@ async function processQueryCore(
   tempDir: string,
   buf: Buffer,
 ) {
-  const { session } = await getBufVars(
-    denops,
-    buf.bufnr,
-  );
-  const params = await parseBufParams(denops, buf);
+  const { session } = await getBufVars(denops, buf.bufnr);
+  const { kind, source, ...params } = await parseBufParams(denops, buf);
 
   if (signal.aborted) return;
 
@@ -127,6 +121,17 @@ async function processQueryCore(
         "--monochrome-output",
         "--unbuffered",
         "--exit-status",
+        ...[
+          ...Object.entries(params).flatMap(([key, value]) => {
+            if (value === undefined) {
+              return [];
+            } else if (value === "") {
+              return [`--${key}`];
+            } else {
+              return [`--${key}`, value.toString()];
+            }
+          }),
+        ],
       ],
       cwd: await fn.getcwd(denops),
       signal: signal,
@@ -138,12 +143,12 @@ async function processQueryCore(
 
   await option.readonly.setBuffer(denops, outputBufnr, false);
   try {
-    switch (params.kind) {
+    switch (kind) {
       case "buffer":
-        await processQueryBuffer(denops, process, params.source, outputBufnr);
+        await processQueryBuffer(denops, process, source, outputBufnr);
         break;
       case "file":
-        await processQueryFile(denops, process, params.source, outputBufnr);
+        await processQueryFile(denops, process, source, outputBufnr);
         break;
     }
   } finally {
