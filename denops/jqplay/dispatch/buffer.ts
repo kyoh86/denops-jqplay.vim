@@ -15,7 +15,7 @@ export const validateBufferParams = v.intersect([
   validateBufferOpener,
 ]) satisfies Validation<BufferParams>;
 
-export async function buffer(
+export async function startFromBuffer(
   denops: Denops,
   router: Router,
   params: BufferParams,

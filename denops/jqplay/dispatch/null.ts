@@ -7,24 +7,23 @@ import {
 import * as v from "jsr:@valibot/valibot@0.42.1";
 import { type JqParams, validateJqParams, type Validation } from "../types.ts";
 
-export type FileParams = { source: string } & JqParams & BufferOpener;
+export type NullParams = JqParams & BufferOpener;
 
-export const validateFileParams = v.intersect([
-  v.object({ source: v.string() }),
+export const validateNullParams = v.intersect([
   validateJqParams,
   validateBufferOpener,
-]) satisfies Validation<FileParams>;
+]) satisfies Validation<NullParams>;
 
-export async function startFromFile(
+export async function startFromNull(
   denops: Denops,
   router: Router,
-  params: FileParams,
+  params: NullParams,
 ) {
-  const { source, split, reuse, ...rest } = params;
+  const { split, reuse, ...rest } = params;
   await router.open(
     denops,
     "query",
-    { kind: "file", source, ...rest },
+    { kind: "null", ...rest },
     "",
     { split, reuse },
   );

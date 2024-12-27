@@ -14,14 +14,22 @@ import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
 import * as fn from "jsr:@denops/std@7.4.0/function";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
-import { file, validateFileParams } from "./dispatch/file.ts";
-import { loadQueryBuffer, processQuery } from "./handler/query.ts";
 import {
-  buffer,
+  type FileParams,
+  startFromFile,
+  validateFileParams,
+} from "./dispatch/file.ts";
+import {
   type BufferParams,
+  startFromBuffer,
   validateBufferParams,
 } from "./dispatch/buffer.ts";
-import type { FileParams } from "./dispatch/file.ts";
+import {
+  type NullParams,
+  startFromNull,
+  validateNullParams,
+} from "./dispatch/null.ts";
+import { loadQueryBuffer, processQuery } from "./handler/query.ts";
 import { validateJqParams } from "./types.ts";
 
 export const main: Entrypoint = async (denops) => {
@@ -41,62 +49,83 @@ export const main: Entrypoint = async (denops) => {
     load: async (_buf: Buffer) => {},
   });
   const raw = { // bind params for each entrypoint
+    null: async (uParams: unknown) => {
+      await startFromNull(denops, router, v.parse(validateNullParams, uParams));
+    },
     file: async (uParams: unknown) => {
-      await file(denops, router, v.parse(validateFileParams, uParams));
+      await startFromFile(denops, router, v.parse(validateFileParams, uParams));
     },
     buffer: async (uParams: unknown) => {
-      await buffer(denops, router, v.parse(validateBufferParams, uParams));
+      await startFromBuffer(
+        denops,
+        router,
+        v.parse(validateBufferParams, uParams),
+      );
       return Promise.resolve(uParams);
     },
   };
   const bound = bindDispatcher(raw, new ParamStore(), "");
   denops.dispatcher = await router.dispatch(denops, {
     ...bound,
-    "command:start": async (uArgs: unknown) => {
-      const [_uOpts, uFlags, uResidues] = parse(
-        ensure(uArgs, is.ArrayOf(is.String)),
+    "command:null": async (uArgs: unknown) => {
+      const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+      const { split, ...flags } = v.parse(
+        v.intersect([validateJqParams, validateBufferOpener]),
+        uFlags,
       );
-      const sources = ensure(uResidues, is.ArrayOf(is.String));
-      switch (sources.length) {
+      flags satisfies Partial<NullParams>;
+      await bound.null({ split, ...flags });
+    },
+    "command:file": async (uArgs: unknown) => {
+      const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+      const { split, ...flags } = v.parse(
+        v.intersect([validateJqParams, validateBufferOpener]),
+        uFlags,
+      );
+      flags satisfies Partial<FileParams>;
+      switch (srcs.length) {
         case 0: {
-          const { bufnr, split, ...flags } = v.parse(
-            v.intersect([
-              v.object({ bufnr: v.optional(v.number()) }),
-              validateJqParams,
-              validateBufferOpener,
-            ]),
-            uFlags,
-          );
-          flags satisfies Partial<BufferParams>;
-
-          await bound.buffer({
-            bufnr: bufnr ? Number(bufnr) : await fn.bufnr(denops),
-            split,
-            ...flags,
-          });
+          console.error(":JqplayFile needs a file name");
+          return;
+        }
+        case 1: {
+          break;
+        }
+        default: {
+          console.error(":JqplayFile can accept only one file name");
+          return;
+        }
+      }
+      const source = await fnamemodify(denops, srcs[0], "p");
+      await bound.file({ source, split, ...flags });
+    },
+    "command:buffer": async (uArgs: unknown) => {
+      const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+      let bufnr = 0;
+      switch (srcs.length) {
+        case 0: {
+          bufnr = await fn.bufnr(denops);
           break;
         }
         case 1: {
-          const { split, ...flags } = v.parse(
-            v.intersect([
-              validateJqParams,
-              validateBufferOpener,
-            ]),
-            uFlags,
-          );
-          flags satisfies Partial<FileParams>;
-
-          await bound.file({
-            source: await fnamemodify(denops, sources[0], "p"),
-            split,
-            ...flags,
-          });
+          bufnr = Number(srcs[0]);
+          if (isNaN(bufnr)) {
+            bufnr = await fn.bufnr(denops, srcs[0]);
+          }
           break;
         }
-        default:
-          console.error("invalid: :Jqplay can accept only one file at once");
-          break;
+        default: {
+          console.error(":JqplayBuffer can accept only one buffer name");
+          return;
+        }
       }
+      const { split, ...flags } = v.parse(
+        v.intersect([validateJqParams, validateBufferOpener]),
+        uFlags,
+      );
+      flags satisfies Partial<BufferParams>;
+
+      await bound.buffer({ bufnr, split, ...flags });
     },
   });
 };

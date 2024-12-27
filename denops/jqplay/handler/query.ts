@@ -21,41 +21,40 @@ import { validateJqParams } from "../types.ts";
 type BufVars = { session: string };
 
 async function parseBufParams(denops: Denops, buf: Buffer) {
-  const { kind, source: sourceStr, ...params } = v.parse(
-    v.intersect([
+  return await v.parseAsync(
+    v.intersectAsync([
       validateJqParams,
-      v.object({
-        kind: v.enum({ file: "file", buffer: "buffer" }),
-        source: v.string(),
-      }),
+      v.unionAsync([
+        v.object({
+          kind: v.literal("null"),
+        }),
+        v.objectAsync({
+          kind: v.literal("file"),
+          source: v.pipeAsync(
+            v.string(),
+            v.transform((x) => path.normalize(x)),
+            v.checkAsync(
+              async (x) => await fn.filereadable(denops, x) == 1,
+              (x) => `file ${x.input} is not readable`,
+            ),
+          ),
+        }),
+        v.objectAsync({
+          kind: v.literal("buffer"),
+          source: v.pipeAsync(
+            v.string(),
+            v.regex(/^\d\+$/),
+            v.transform((x) => Number(x)),
+            v.checkAsync(
+              async (x) => await fn.bufloaded(denops, x),
+              (x) => `buffer ${x.input} is not loaded`,
+            ),
+          ),
+        }),
+      ]),
     ]),
     buf.bufname.params,
   );
-  switch (kind) {
-    case "buffer": {
-      const source = parseInt(sourceStr, 10);
-      if (isNaN(source)) {
-        throw new Error(
-          `{source} should be a number: ${sourceStr}`,
-        );
-      }
-      if (!await fn.bufloaded(denops, source)) {
-        throw new Error(
-          `buffer ${source} is not loaded`,
-        );
-      }
-      return { kind, source, ...params };
-    }
-    case "file": {
-      path.parse(sourceStr);
-      if (!await fn.filereadable(denops, sourceStr)) {
-        throw new Error(
-          `file ${sourceStr} is not readable`,
-        );
-      }
-      return { kind, source: path.normalize(sourceStr), ...params };
-    }
-  }
 }
 
 async function getBufVars(denops: Denops, bufnr: number): Promise<BufVars> {
@@ -94,7 +93,7 @@ async function processQueryCore(
   buf: Buffer,
 ) {
   const { session } = await getBufVars(denops, buf.bufnr);
-  const { kind, source, ...params } = await parseBufParams(denops, buf);
+  const params = await parseBufParams(denops, buf);
 
   if (signal.aborted) return;
 
@@ -121,6 +120,7 @@ async function processQueryCore(
         "--monochrome-output",
         "--unbuffered",
         "--exit-status",
+        ...(params.kind === "null" ? ["--null-input"] : []),
         ...[
           ...Object.entries(params).flatMap(([key, value]) => {
             if (value === undefined) {
@@ -143,12 +143,15 @@ async function processQueryCore(
 
   await option.readonly.setBuffer(denops, outputBufnr, false);
   try {
-    switch (kind) {
+    switch (params.kind) {
+      case "null":
+        await processQueryNull(denops, process, outputBufnr);
+        break;
       case "buffer":
-        await processQueryBuffer(denops, process, source, outputBufnr);
+        await processQueryBuffer(denops, process, params.source, outputBufnr);
         break;
       case "file":
-        await processQueryFile(denops, process, source, outputBufnr);
+        await processQueryFile(denops, process, params.source, outputBufnr);
         break;
     }
   } finally {
@@ -157,6 +160,22 @@ async function processQueryCore(
 }
 
 const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);
+
+async function processQueryNull(
+  denops: Denops,
+  process: Deno.ChildProcess,
+  outputBufnr: number,
+) {
+  // stdoutの結果をoutputBufnrへ書き込み
+  await Promise.all([
+    process.status,
+    process.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+      .pipeThrough(new ChunkLinesTransformStream())
+      .pipeTo(new BufferWritingStream(denops, outputBufnr)),
+  ]);
+}
 
 async function processQueryBuffer(
   denops: Denops,
