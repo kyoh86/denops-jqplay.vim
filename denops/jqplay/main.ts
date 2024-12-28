@@ -16,15 +16,15 @@ import * as fn from "jsr:@denops/std@7.4.0/function";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import {
-  type FileParams,
-  fileParamsSchema,
-  startFromFile,
-} from "./dispatch/file.ts";
-import {
   type BufferParams,
   bufferParamsSchema,
   startFromBuffer,
 } from "./dispatch/buffer.ts";
+import {
+  type FileParams,
+  fileParamsSchema,
+  startFromFile,
+} from "./dispatch/file.ts";
 import {
   type NullParams,
   nullParamsSchema,
@@ -50,12 +50,6 @@ export const main: Entrypoint = async (denops) => {
     load: async (_buf: Buffer) => {},
   });
   const raw = { // bind params for each entrypoint
-    null: async (uParams: unknown) => {
-      await startFromNull(denops, router, v.parse(nullParamsSchema, uParams));
-    },
-    file: async (uParams: unknown) => {
-      await startFromFile(denops, router, v.parse(fileParamsSchema, uParams));
-    },
     buffer: async (uParams: unknown) => {
       await startFromBuffer(
         denops,
@@ -64,48 +58,16 @@ export const main: Entrypoint = async (denops) => {
       );
       return Promise.resolve(uParams);
     },
+    file: async (uParams: unknown) => {
+      await startFromFile(denops, router, v.parse(fileParamsSchema, uParams));
+    },
+    null: async (uParams: unknown) => {
+      await startFromNull(denops, router, v.parse(nullParamsSchema, uParams));
+    },
   };
   const bound = bindDispatcher(raw, new ParamStore(), "");
   denops.dispatcher = await router.dispatch(denops, {
     ...bound,
-    "command:null": catchError(
-      denops,
-      async (uArgs: unknown) => {
-        const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-        const { split, ...flags } = v.parse(
-          v.intersect([flagsSchema, bufferOpenerSchema]),
-          uFlags,
-        );
-        flags satisfies Partial<NullParams>;
-        await bound.null({ split, ...flags });
-      },
-    ),
-    "command:file": catchError(
-      denops,
-      async (uArgs: unknown) => {
-        const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-        const { split, ...flags } = v.parse(
-          v.intersect([flagsSchema, bufferOpenerSchema]),
-          uFlags,
-        );
-        flags satisfies Partial<FileParams>;
-        switch (srcs.length) {
-          case 0: {
-            console.error(":JqplayFile needs a file name");
-            return;
-          }
-          case 1: {
-            break;
-          }
-          default: {
-            console.error(":JqplayFile can accept only one file name");
-            return;
-          }
-        }
-        const source = await fnamemodify(denops, srcs[0], "p");
-        await bound.file({ source, split, ...flags });
-      },
-    ),
     "command:buffer": catchError(
       denops,
       async (uRange: unknown, uArgs: unknown) => {
@@ -140,6 +102,44 @@ export const main: Entrypoint = async (denops) => {
         flags satisfies Partial<BufferParams>;
 
         await bound.buffer({ bufnr, split, ...flags });
+      },
+    ),
+    "command:file": catchError(
+      denops,
+      async (uArgs: unknown) => {
+        const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+        const { split, ...flags } = v.parse(
+          v.intersect([flagsSchema, bufferOpenerSchema]),
+          uFlags,
+        );
+        flags satisfies Partial<FileParams>;
+        switch (srcs.length) {
+          case 0: {
+            console.error(":JqplayFile needs a file name");
+            return;
+          }
+          case 1: {
+            break;
+          }
+          default: {
+            console.error(":JqplayFile can accept only one file name");
+            return;
+          }
+        }
+        const source = await fnamemodify(denops, srcs[0], "p");
+        await bound.file({ source, split, ...flags });
+      },
+    ),
+    "command:null": catchError(
+      denops,
+      async (uArgs: unknown) => {
+        const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
+        const { split, ...flags } = v.parse(
+          v.intersect([flagsSchema, bufferOpenerSchema]),
+          uFlags,
+        );
+        flags satisfies Partial<NullParams>;
+        await bound.null({ split, ...flags });
       },
     ),
   });

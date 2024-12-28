@@ -21,12 +21,6 @@ import { numeric } from "../types.ts";
 
 type BufVars = { session: string };
 
-type NullBufParams = { kind: "null" };
-
-const nullBufParamsSchema = v.object({
-  kind: v.literal("null"),
-});
-
 type BufferBufParams =
   | { kind: "buffer"; source: string }
   | {
@@ -82,24 +76,30 @@ const fileBufParamsSchema = (denops: Denops) =>
     ),
   });
 
+type NullBufParams = { kind: "null" };
+
+const nullBufParamsSchema = v.object({
+  kind: v.literal("null"),
+});
+
 async function parseBufParams(
   denops: Denops,
   buf: Buffer,
 ): Promise<
   & Flags
   & (
-    | NullBufParams
     | BufferBufParams
     | FileBufParams
+    | NullBufParams
   )
 > {
   return await v.parseAsync(
     v.intersectAsync([
       flagsSchema,
       v.unionAsync([
-        nullBufParamsSchema,
         bufferBufParamsSchema(denops),
         fileBufParamsSchema(denops),
+        nullBufParamsSchema,
       ]),
     ]),
     buf.bufname.params,
@@ -170,12 +170,6 @@ async function processQueryCore(
 
   try {
     switch (params.kind) {
-      case "null": {
-        const { kind: _, ...flags } = params;
-        const p = await start(ctx, flags);
-        await processNull(denops, p, outputBufnr);
-        break;
-      }
       case "buffer": {
         const { kind: _, source, ...flags } = params;
         const p = await start(ctx, flags);
@@ -188,26 +182,16 @@ async function processQueryCore(
         await processFile(denops, p, source, outputBufnr);
         break;
       }
+      case "null": {
+        const { kind: _, ...flags } = params;
+        const p = await start(ctx, flags);
+        await processNull(denops, p, outputBufnr);
+        break;
+      }
     }
   } finally {
     await option.readonly.setBuffer(denops, outputBufnr, true);
   }
-}
-
-async function processNull(
-  denops: Denops,
-  process: Deno.ChildProcess,
-  outputBufnr: number,
-) {
-  // stdoutの結果をoutputBufnrへ書き込み
-  await Promise.all([
-    process.status,
-    process.stdout
-      .pipeThrough(new TextDecoderStream())
-      .pipeThrough(new TextLineStream())
-      .pipeThrough(new ChunkLinesTransformStream())
-      .pipeTo(new BufferWritingStream(denops, outputBufnr)),
-  ]);
 }
 
 function getRange(
@@ -275,6 +259,22 @@ async function processFile(
   } finally {
     file.close();
   }
+}
+
+async function processNull(
+  denops: Denops,
+  process: Deno.ChildProcess,
+  outputBufnr: number,
+) {
+  // stdoutの結果をoutputBufnrへ書き込み
+  await Promise.all([
+    process.status,
+    process.stdout
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+      .pipeThrough(new ChunkLinesTransformStream())
+      .pipeTo(new BufferWritingStream(denops, outputBufnr)),
+  ]);
 }
 
 const debouncedProcessQuery = debounceWithAbort(processQueryCore, 500);

@@ -47,8 +47,8 @@ License: MIT License
                                                                 *jqplay-usage*
 基本的な使い方 ~
 
-|jqplay#file()|、|jqplay#buffer()|、|:JqplayBuffer|または|:JqplayFile|を
-使用して、jqplayを開始します。
+|jqplay#file()|、|jqplay#buffer()|、|jqplay#null()|、|:JqplayBuffer|、
+|:JqplayFile|または|:JqplayNull|を使用して、jqplayを開始します。
 
 開いたウィンドウに、jqのフィルタを入力してください。
 |:write|で保存すると、フィルタ結果が新しいウィンドウに表示されます。
@@ -90,7 +90,9 @@ jqplay#setup({opts})
     すべての関数に対して設定を行う必要はありません。設定しない場合はデフォルト
     値が使用されます。
     また、関数名に`_`を指定して、すべての関数を横断して設定できます。 >vim
-        call jqplay#setup({ "_": { "split": "above" } })
+        call jqplay#setup({ "_": {
+            \ "split": "above",
+            \ "jq-bin": "/usr/bin/jq" } })
 <
 
 TODO: jqplay#null({opt})
