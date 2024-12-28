@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/std@7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.6";
+import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.7";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
 import * as path from "jsr:@std/path@1.0.8";
 import * as buffer from "jsr:@denops/std@7.4.0/buffer";
@@ -16,41 +16,64 @@ import {
   ChunkLinesTransformStream,
 } from "../lib/stream.ts";
 import { getNewSessionId } from "../lib/session.ts";
-import { type JqParams, validateJqParams } from "../types.ts";
+import { type Context, type Flags, flagsSchema, start } from "../lib/jq.ts";
+import { numeric } from "../types.ts";
 
 type BufVars = { session: string };
 
-async function parseBufParams(denops: Denops, buf: Buffer) {
+type NullBufParams = { kind: "null" };
+
+const nullBufParamsSchema = v.object({
+  kind: v.literal("null"),
+});
+
+type BufferBufParams = { kind: "buffer"; source: string };
+
+const bufferBufParamsSchema = (denops: Denops) =>
+  v.objectAsync({
+    kind: v.literal("buffer"),
+    source: v.pipeAsync(
+      v.string(),
+      numeric,
+      v.checkAsync(
+        async (x) => await fn.bufloaded(denops, Number(x)),
+        (x) => `buffer ${x.input} is not loaded`,
+      ),
+    ),
+  });
+
+type FileBufParams = { kind: "file"; source: string };
+
+const fileBufParamsSchema = (denops: Denops) =>
+  v.objectAsync({
+    kind: v.literal("file"),
+    source: v.pipeAsync(
+      v.string(),
+      v.checkAsync(
+        async (x) => await fn.filereadable(denops, x) == 1,
+        (x) => `file ${x.input} is not readable`,
+      ),
+    ),
+  });
+
+async function parseBufParams(
+  denops: Denops,
+  buf: Buffer,
+): Promise<
+  & Flags
+  & (
+    | NullBufParams
+    | BufferBufParams
+    | FileBufParams
+  )
+> {
   return await v.parseAsync(
     v.intersectAsync([
-      validateJqParams,
+      flagsSchema,
       v.unionAsync([
-        v.object({
-          kind: v.literal("null"),
-        }),
-        v.objectAsync({
-          kind: v.literal("file"),
-          source: v.pipeAsync(
-            v.string(),
-            v.transform((x) => path.normalize(x)),
-            v.checkAsync(
-              async (x) => await fn.filereadable(denops, x) == 1,
-              (x) => `file ${x.input} is not readable`,
-            ),
-          ),
-        }),
-        v.objectAsync({
-          kind: v.literal("buffer"),
-          source: v.pipeAsync(
-            v.string(),
-            v.regex(/^\d\+$/),
-            v.transform((x) => Number(x)),
-            v.checkAsync(
-              async (x) => await fn.bufloaded(denops, x),
-              (x) => `buffer ${x.input} is not loaded`,
-            ),
-          ),
-        }),
+        nullBufParamsSchema,
+        bufferBufParamsSchema(denops),
+        fileBufParamsSchema(denops),
       ]),
     ]),
     buf.bufname.params,
@@ -112,24 +135,31 @@ async function processQueryCore(
 
   if (signal.aborted) return;
 
+  const ctx: Context = {
+    denops,
+    signal,
+    fromFile: filter,
+    ...params.kind === "null" ? { nullInput: true } : {},
+  };
+
   try {
     switch (params.kind) {
       case "null": {
         const { kind: _, ...flags } = params;
-        const p = await callJq(denops, signal, flags, filter, ["--null-input"]);
-        await processQueryNull(denops, p, outputBufnr);
+        const p = await start(ctx, flags);
+        await processNull(denops, p, outputBufnr);
         break;
       }
       case "buffer": {
         const { kind: _, source, ...flags } = params;
-        const p = await callJq(denops, signal, flags, filter);
-        await processQueryBuffer(denops, p, source, outputBufnr);
+        const p = await start(ctx, flags);
+        await processBuf(denops, p, Number(source), outputBufnr);
         break;
       }
       case "file": {
         const { kind: _, source, ...flags } = params;
-        const p = await callJq(denops, signal, flags, filter);
-        await processQueryFile(denops, p, source, outputBufnr);
+        const p = await start(ctx, flags);
+        await processFile(denops, p, source, outputBufnr);
         break;
       }
     }
@@ -138,46 +168,7 @@ async function processQueryCore(
   }
 }
 
-async function callJq(
-  denops: Denops,
-  signal: AbortSignal,
-  jqParams: JqParams,
-  filter: string,
-  additional?: string[],
-) {
-  const cmd = new Deno.Command(
-    "jq",
-    {
-      args: [
-        "--monochrome-output",
-        "--unbuffered",
-        "--exit-status",
-        "--from-file",
-        filter,
-        ...additional ?? [],
-        ...[
-          ...Object.entries(jqParams).flatMap(([key, value]) => {
-            if (value === undefined) {
-              return [];
-            } else if (value === "") {
-              return [`--${key}`];
-            } else {
-              return [`--${key}`, value.toString()];
-            }
-          }),
-        ],
-      ],
-      cwd: await fn.getcwd(denops),
-      signal,
-      stdin: "piped",
-      stdout: "piped",
-    },
-  );
-  const process = cmd.spawn();
-  return process;
-}
-
-async function processQueryNull(
+async function processNull(
   denops: Denops,
   process: Deno.ChildProcess,
   outputBufnr: number,
@@ -193,7 +184,7 @@ async function processQueryNull(
   ]);
 }
 
-async function processQueryBuffer(
+async function processBuf(
   denops: Denops,
   process: Deno.ChildProcess,
   inputBufnr: number,
@@ -222,7 +213,7 @@ async function processQueryBuffer(
   ]);
 }
 
-async function processQueryFile(
+async function processFile(
   denops: Denops,
   process: Deno.ChildProcess,
   src: string,

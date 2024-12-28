@@ -1,18 +1,19 @@
 import type { Denops } from "jsr:@denops/core@7.0.1";
 import {
   type BufferOpener,
+  bufferOpenerSchema,
   type Router,
-  validateBufferOpener,
-} from "jsr:@kyoh86/denops-router@0.3.6";
+} from "jsr:@kyoh86/denops-router@0.3.7";
 import * as v from "jsr:@valibot/valibot@0.42.1";
-import { type JqParams, validateJqParams, type Validation } from "../types.ts";
+import type { Schema } from "../types.ts";
+import { type Flags, flagsSchema } from "../lib/jq.ts";
 
-export type NullParams = JqParams & BufferOpener;
+export type NullParams = Flags & BufferOpener;
 
-export const validateNullParams = v.intersect([
-  validateJqParams,
-  validateBufferOpener,
-]) satisfies Validation<NullParams>;
+export const nullParamsSchema = v.intersect([
+  flagsSchema,
+  bufferOpenerSchema,
+]) satisfies Schema<NullParams>;
 
 export async function startFromNull(
   denops: Denops,

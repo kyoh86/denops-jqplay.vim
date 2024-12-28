@@ -1,19 +1,20 @@
 import type { Denops } from "jsr:@denops/core@7.0.1";
 import {
   type BufferOpener,
+  bufferOpenerSchema,
   type Router,
-  validateBufferOpener,
-} from "jsr:@kyoh86/denops-router@0.3.6";
+} from "jsr:@kyoh86/denops-router@0.3.7";
 import * as v from "jsr:@valibot/valibot@0.42.1";
-import { type JqParams, validateJqParams, type Validation } from "../types.ts";
+import type { Schema } from "../types.ts";
+import { type Flags, flagsSchema } from "../lib/jq.ts";
 
-export type FileParams = { source: string } & JqParams & BufferOpener;
+export type FileParams = { source: string } & Flags & BufferOpener;
 
-export const validateFileParams = v.intersect([
+export const fileParamsSchema = v.intersect([
   v.object({ source: v.string() }),
-  validateJqParams,
-  validateBufferOpener,
-]) satisfies Validation<FileParams>;
+  flagsSchema,
+  bufferOpenerSchema,
+]) satisfies Schema<FileParams>;
 
 export async function startFromFile(
   denops: Denops,
