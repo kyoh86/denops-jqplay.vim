@@ -108,7 +108,12 @@ export const main: Entrypoint = async (denops) => {
     ),
     "command:buffer": catchError(
       denops,
-      async (uArgs: unknown) => {
+      async (uRange: unknown, uArgs: unknown) => {
+        const range = ensure(
+          uRange,
+          is.ObjectOf({ range: is.Number, line1: is.Number, line2: is.Number }),
+        );
+        console.log(range);
         const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
         let bufnr = 0;
         switch (srcs.length) {

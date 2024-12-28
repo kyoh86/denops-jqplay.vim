@@ -8,10 +8,26 @@ import * as v from "jsr:@valibot/valibot@0.42.1";
 import type { Schema } from "../types.ts";
 import { type Flags, flagsSchema } from "../lib/jq.ts";
 
-export type BufferParams = { bufnr: number } & Flags & BufferOpener;
+export type BufferParams =
+  & { bufnr: number }
+  & (Record<never, never> | {
+    range: number;
+    line1: number;
+    line2: number;
+  })
+  & Flags
+  & BufferOpener;
 
 export const bufferParamsSchema = v.intersect([
-  v.object({ bufnr: v.number() }),
+  v.union([
+    v.object({ bufnr: v.number() }),
+    v.object({
+      bufnr: v.number(),
+      range: v.number(),
+      line1: v.number(),
+      line2: v.number(),
+    }),
+  ]),
   flagsSchema,
   bufferOpenerSchema,
 ]) satisfies Schema<BufferParams>;

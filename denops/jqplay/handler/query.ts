@@ -27,20 +27,46 @@ const nullBufParamsSchema = v.object({
   kind: v.literal("null"),
 });
 
-type BufferBufParams = { kind: "buffer"; source: string };
+type BufferBufParams =
+  | { kind: "buffer"; source: string }
+  | {
+    kind: "buffer";
+    source: string;
+    range: "0" | "1" | "2";
+    line1: number | "$";
+    line2: number | "$";
+  };
+
+const bufferSourceSchema = (denops: Denops) =>
+  v.pipeAsync(
+    v.string(),
+    numeric,
+    v.checkAsync(
+      async (x) => await fn.bufloaded(denops, Number(x)),
+      (x) => `buffer ${x.input} is not loaded`,
+    ),
+  );
 
 const bufferBufParamsSchema = (denops: Denops) =>
-  v.objectAsync({
-    kind: v.literal("buffer"),
-    source: v.pipeAsync(
-      v.string(),
-      numeric,
-      v.checkAsync(
-        async (x) => await fn.bufloaded(denops, Number(x)),
-        (x) => `buffer ${x.input} is not loaded`,
-      ),
-    ),
-  });
+  v.unionAsync([
+    v.objectAsync({
+      kind: v.literal("buffer"),
+      source: bufferSourceSchema(denops),
+    }),
+    v.objectAsync({
+      kind: v.literal("buffer"),
+      source: bufferSourceSchema(denops),
+      range: v.union([v.literal("0"), v.literal("1"), v.literal("2")]),
+      line1: v.union([
+        v.pipe(v.string(), numeric, v.transform((x) => Number(x))),
+        v.literal("$"),
+      ]),
+      line2: v.union([
+        v.pipe(v.string(), numeric, v.transform((x) => Number(x))),
+        v.literal("$"),
+      ]),
+    }),
+  ]);
 
 type FileBufParams = { kind: "file"; source: string };
 
@@ -153,7 +179,7 @@ async function processQueryCore(
       case "buffer": {
         const { kind: _, source, ...flags } = params;
         const p = await start(ctx, flags);
-        await processBuf(denops, p, Number(source), outputBufnr);
+        await processBuf(denops, p, Number(source), outputBufnr, params);
         break;
       }
       case "file": {
@@ -184,13 +210,29 @@ async function processNull(
   ]);
 }
 
+function getRange(
+  params: BufferBufParams,
+): { lnum: number | "$"; end: number | "$" } {
+  if (!("range" in params) || params.range == "0") {
+    return { lnum: 1, end: "$" };
+  }
+  return { lnum: params.line1, end: params.line2 };
+}
+
 async function processBuf(
   denops: Denops,
   process: Deno.ChildProcess,
   inputBufnr: number,
   outputBufnr: number,
+  params: BufferBufParams,
 ) {
-  const lines = await fn.getbufline(denops, inputBufnr, 1, "$");
+  const range = getRange(params);
+  const lines = await fn.getbufline(
+    denops,
+    inputBufnr,
+    range.lnum,
+    range.end,
+  );
 
   // バッファ内容を改行で結合
   const inputText = lines.join("\n") + "\n";
