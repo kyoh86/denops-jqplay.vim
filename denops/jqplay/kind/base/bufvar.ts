@@ -5,7 +5,10 @@ import * as variable from "jsr:@denops/std@7.4.0/variable";
 
 export type BufVars = { session: string };
 
-export async function getBufVars(denops: Denops, bufnr: number): Promise<BufVars> {
+export async function getBufVars(
+  denops: Denops,
+  bufnr: number,
+): Promise<BufVars> {
   const get = async (name: string) =>
     ensure(await variable.b.get(denops, name), is.String);
   return await buffer.ensure(denops, bufnr, async () => {
@@ -20,4 +23,3 @@ export async function setBufVars(denops: Denops, bufnr: number, vars: BufVars) {
     await variable.b.set(denops, "jqplay_session", vars.session);
   });
 }
-
