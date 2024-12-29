@@ -2,18 +2,13 @@ import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import type { Schema, StringFields } from "../../types.ts";
 
-export type FileParams = { source: string };
-
-export type FileFlags = StringFields<FileParams>;
-
-export const fileParamsSchema = v.object({
+export type Params = { source: string };
+export const paramsSchema = v.object({
   source: v.string(),
-}) satisfies Schema<FileParams>;
+}) satisfies Schema<Params>;
 
-export const fileFlagSchema = fileParamsSchema satisfies Schema<FileFlags>;
+export type Flags = StringFields<Params>;
+export const flagSchema = paramsSchema satisfies Schema<Flags>;
 
-export const fileFlagsTransform = fileParamsSchema satisfies Schema<FileParams>;
-export const fileParamsTransform = fileParamsSchema satisfies Schema<
-  FileParams
->;
-
+export const flagsToParams = paramsSchema satisfies Schema<Params>;
+export const paramsToFlags = paramsSchema satisfies Schema<Flags>;

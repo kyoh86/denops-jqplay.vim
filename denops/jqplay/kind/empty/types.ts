@@ -2,21 +2,14 @@ import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import type { Schema, StringFields } from "../../types.ts";
 
-export type EmptyParams = Record<never, never>;
-
-export type EmptyFlags = StringFields<EmptyParams>;
-
-export const emptyParamsSchema = v.record(
+export type Params = Record<string, never>;
+export const paramsSchema = v.record(
+  v.string(),
   v.never(),
-  v.never(),
-) satisfies Schema<EmptyParams>;
+) satisfies Schema<Params>;
 
-export const emptyFlagSchema = emptyParamsSchema satisfies Schema<EmptyFlags>;
+export type Flags = StringFields<Params>;
+export const flagSchema = paramsSchema satisfies Schema<Flags>;
 
-export const emptyFlagsTransform = emptyParamsSchema satisfies Schema<
-  EmptyParams
->;
-
-export const emptyParamsTransform = emptyParamsSchema satisfies Schema<
-  EmptyParams
->;
+export const flagsToParams = paramsSchema satisfies Schema<Params>;
+export const paramsToFlags = paramsSchema satisfies Schema<Flags>;

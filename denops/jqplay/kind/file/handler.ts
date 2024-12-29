@@ -9,19 +9,19 @@ import {
   ChunkLinesTransformStream,
 } from "../../lib/stream.ts";
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import { fileFlagsTransform, type FileParams } from "./types.ts";
+import { flagsToParams, type Params } from "./types.ts";
 import { BaseHandler } from "../base/handler.ts";
 
-export class FileHandler extends BaseHandler<FileParams> {
+export class FileHandler extends BaseHandler<Params> {
   override async parseBufParams(
     denops: Denops,
     buf: Buffer,
-  ): Promise<{ flags: Flags; params: FileParams }> {
+  ): Promise<{ flags: Flags; params: Params }> {
     const params = v.parse(
       v.intersect([
         v.pipe(flagsSchema, v.transform((x) => ({ flags: x }))),
         v.pipe(
-          fileFlagsTransform,
+          flagsToParams,
           v.transform((x) => ({ params: x })),
         ),
       ]),
@@ -36,7 +36,7 @@ export class FileHandler extends BaseHandler<FileParams> {
   override async processCore(
     denops: Denops,
     process: Deno.ChildProcess,
-    params: FileParams,
+    params: Params,
     outputBufnr: number,
   ) {
     const file = await Deno.open(params.source, { read: true });

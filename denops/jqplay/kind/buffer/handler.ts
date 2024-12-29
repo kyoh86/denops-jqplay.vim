@@ -9,23 +9,19 @@ import {
   ChunkLinesTransformStream,
 } from "../../lib/stream.ts";
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import {
-  bufferFlagsTransform,
-  type BufferParams,
-  type BufferRangeParams,
-} from "./types.ts";
+import { flagsToParams, type Params, type RangeParams } from "./types.ts";
 import { BaseHandler } from "../base/handler.ts";
 
-export class BufferHandler extends BaseHandler<BufferParams> {
+export class BufferHandler extends BaseHandler<Params> {
   override async parseBufParams(
     denops: Denops,
     buf: Buffer,
-  ): Promise<{ flags: Flags; params: BufferParams }> {
+  ): Promise<{ flags: Flags; params: Params }> {
     const params = v.parse(
       v.intersect([
         v.pipe(flagsSchema, v.transform((x) => ({ flags: x }))),
         v.pipe(
-          bufferFlagsTransform,
+          flagsToParams,
           v.transform((x) => ({ params: x })),
         ),
       ]),
@@ -44,7 +40,7 @@ export class BufferHandler extends BaseHandler<BufferParams> {
     return params;
   }
 
-  #getRange(p: BufferParams): BufferRangeParams {
+  #getRange(p: Params): RangeParams {
     if (!("lnum" in p)) {
       return { lnum: 1, end: "$" };
     }
@@ -54,7 +50,7 @@ export class BufferHandler extends BaseHandler<BufferParams> {
   override async processCore(
     denops: Denops,
     process: Deno.ChildProcess,
-    params: BufferParams,
+    params: Params,
     outputBufnr: number,
   ) {
     const { lnum, end } = this.#getRange(params);

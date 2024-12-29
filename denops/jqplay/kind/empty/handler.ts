@@ -8,19 +8,19 @@ import {
   ChunkLinesTransformStream,
 } from "../../lib/stream.ts";
 import { type Context, type Flags, flagsSchema } from "../../lib/jq.ts";
-import { emptyFlagsTransform, type EmptyParams } from "./types.ts";
+import { flagsToParams, type Params } from "./types.ts";
 import { BaseHandler } from "../base/handler.ts";
 
-export class EmptyHandler extends BaseHandler<EmptyParams> {
+export class EmptyHandler extends BaseHandler<Params> {
   override parseBufParams(
     _denops: Denops,
     buf: Buffer,
-  ): Promise<{ flags: Flags; params: EmptyParams }> {
+  ): Promise<{ flags: Flags; params: Params }> {
     const params = v.parse(
       v.intersect([
         v.pipe(flagsSchema, v.transform((x) => ({ flags: x }))),
         v.pipe(
-          emptyFlagsTransform,
+          flagsToParams,
           v.transform((x) => ({ params: x })),
         ),
       ]),
@@ -38,7 +38,7 @@ export class EmptyHandler extends BaseHandler<EmptyParams> {
   override async processCore(
     denops: Denops,
     process: Deno.ChildProcess,
-    _params: EmptyParams,
+    _params: Params,
     outputBufnr: number,
   ) {
     // stdoutの結果をoutputBufnrへ書き込み

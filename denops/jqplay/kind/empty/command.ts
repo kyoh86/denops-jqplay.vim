@@ -8,7 +8,7 @@ import {
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import { emptyFlagsTransform, type EmptyParams } from "./types.ts";
+import { flagsToParams, type Params } from "./types.ts";
 
 export async function command(
   _denops: Denops,
@@ -17,9 +17,9 @@ export async function command(
 ) {
   const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
   const flags = v.parse(
-    v.intersect([flagsSchema, bufferOpenerSchema, emptyFlagsTransform]),
+    v.intersect([flagsSchema, bufferOpenerSchema, flagsToParams]),
     uFlags,
   );
-  flags satisfies EmptyParams & Flags & BufferOpener;
+  flags satisfies Params & Flags & BufferOpener;
   await bound(flags);
 }

@@ -40,7 +40,7 @@ License: MIT License
                                                                 *jqplay-setup*
 初期設定 ~
 
-|jqplay#setup()| 関数を使用してください。
+|jqplay#set_params()| 関数を使用してください。
 
 
 ==============================================================================
@@ -61,8 +61,8 @@ License: MIT License
                                                              *jqplay-function*
 関数 ~
 
-                                                              *jqplay#setup()*
-jqplay#setup({opts})
+                                                         *jqplay#set_params()*
+jqplay#set_params({opts})
 
     この関数で、他の各関数の引数のデフォルト値を設定することができます。
     提供しているコマンド類も、それぞれ対応する関数を呼んでいるため、
@@ -95,7 +95,6 @@ jqplay#setup({opts})
             \ "jq-bin": "/usr/bin/jq" } })
 <
 
-TODO: これらの関数の実装
                                                              *jqplay#buffer()*
 jqplay#buffer({opt})
 
@@ -103,10 +102,15 @@ jqplay#buffer({opt})
 
     {opt} は以下のようなフィールドを持つ辞書です。
 
-                                               *jqplay#buffer()-option-source*
-        {source} : 文字列
-            JSONデータを含むバッファ番号を指定します。
+                                               *jqplay#buffer()-option-bufnr*
+        {bufnr} : 数値
+            JSONデータを含むバッファのバッファ番号を指定します。
             デフォルト: 0（現在のバッファ）
+
+                                              *jqplay#buffer()-option-bufname*
+        {bufname} : 文字列
+            JSONデータを含むバッファのバッファ名を指定します。
+            デフォルト: ""（bufnrを使用する）
 
                                                 *jqplay#buffer()-option-split*
         {split} : 文字列
@@ -114,8 +118,40 @@ jqplay#buffer({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
-	TODO: range指定を追加する
-	TODO: jqのオプションを追加する
+                                                *jqplay#buffer()-option-reuse*
+        {reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+        {lnum}: 数値または"$"
+            JSONデータを含むバッファの行の先頭を指定します。
+            デフォルト: 1
+
+        {end}: 数値または"$"
+            JSONデータを含むバッファの行の末尾を指定します。
+            デフォルト: "$"
+
+		{jq-raw-input} : 真偽値 (0/1)
+			入力をJSONではなくそのままの文字列として扱います。
+			デフォルト: v:false
+		{jq-slurp}
+		{jq-compact-output}
+		{jq-raw-output}
+		{jq-join-output}
+		{jq-ascii-output}
+		{jq-sort-keys}
+		{jq-tab}
+		{jq-indent}
+		{jq-stream}
+		{jq-stream-errors}
+		{jq-seq}
+		{jq-arg}
+		{jq-argjson}
+		{jq-slurpfile}
+		{jq-rawfile}
+		{jq-cwd}
+		{jq-bin}
 
                                                                *jqplay#file()*
 jqplay#file({opt})
@@ -134,7 +170,13 @@ jqplay#file({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
-	TODO: jqのオプションを追加する
+                                                  *jqplay#file()-option-reuse*
+        {reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+    TODO: jqのオプションを追加する
 
                                                                *jqplay#empty()*
 jqplay#empty({opt})
@@ -143,32 +185,50 @@ jqplay#empty({opt})
 
     {opt} は以下のようなフィールドを持つ辞書です。
 
-                                                  *jqplay#empty()-option-split*
+                                                 *jqplay#empty()-option-split*
         {split} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
             デフォルト: "none"
             参照: |jqplay-option-split|
 
-	TODO: jqのオプションを追加する
+                                                 *jqplay#empty()-option-reuse*
+        {reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+    TODO: jqのオプションを追加する
 
 ==============================================================================
                                                              *jqplay-commands*
 コマンド ~
 
                                                                *:JqplayBuffer*
-:[range]JqplayBuffer [{flags}] {buf}
+:[range]JqplayBuffer [{flags}]
 
     |jqplay#buffer()|を呼び出します。
-    {buf}に指定したバッファの[range]の中の行がソースとして指定されます。
-	{buf}に指定できる内容は |bufnr()| に指定するものと同じです。
+    指定したバッファの[range]の中の行がソースとして指定されます。
     {flags}には以下を指定できます
+
+        --bufnr={bufnr} : 数値
+            JSONデータを含むバッファのバッファ番号を指定します。
+            デフォルト: 0（現在のバッファ）
+
+        --bufname={bufname} : 文字列
+            JSONデータを含むバッファのバッファ名を指定します。
+            デフォルト: ""（bufnrを使用する）
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
             デフォルト: "none"
             参照: |jqplay-option-split|
-	
-	TODO: jqのオプションを追加する
+
+        --reuse={reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+    TODO: jqのオプションを追加する
 
                                                                 *:JqplayFile*
 :JqplayFile [{flags}] {file}
@@ -182,22 +242,32 @@ jqplay#empty({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
-	TODO: jqのオプションを追加する
+        --reuse={reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+    TODO: jqのオプションを追加する
 
                                                                  *:JqplayEmpty*
 :JqplayEmpty [{flags}]
 
     |jqplay#buffer()|を呼び出します。
     {buf}に指定したバッファがソースとして指定されます。
-	{buf}に指定できる内容は |bufnr()| に指定するものと同じです。
+    {buf}に指定できる内容は |bufnr()| に指定するものと同じです。
     {flags}には以下を指定できます
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
             デフォルト: "none"
             参照: |jqplay-option-split|
-	
-	TODO: jqのオプションを追加する
+
+        --reuse={reuse} : 真偽値 (0/1)
+            出力用のバッファが既にいずれかのウインドウに開かれているとき、
+            フォーカスを合わせるだけで新しいウインドウを開きません。
+            デフォルト: v:false
+
+    TODO: jqのオプションを追加する
 
 
 ==============================================================================

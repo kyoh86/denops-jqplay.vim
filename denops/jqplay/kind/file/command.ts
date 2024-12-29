@@ -1,4 +1,4 @@
-import type { Denops } from "jsr:@denops/core@7.0.1";
+import type { Denops } from "jsr:@denops/std@7.4.0";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
 import { parse } from "jsr:@denops/std@7.4.0/argument";
 import {
@@ -9,7 +9,7 @@ import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import type { FileParams } from "./types.ts";
+import type { Params } from "./types.ts";
 
 export async function command(
   denops: Denops,
@@ -38,7 +38,7 @@ export async function command(
   const source = await fnamemodify(denops, srcs[0], "p");
   await bound(
     { source, ...flags } satisfies (
-      & FileParams
+      & Params
       & Flags
       & BufferOpener
     ),

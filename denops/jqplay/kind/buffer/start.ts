@@ -1,4 +1,4 @@
-import type { Denops } from "jsr:@denops/core@7.0.1";
+import type { Denops } from "jsr:@denops/std@7.4.0";
 import {
   bufferOpenerSchema,
   type Router,
@@ -6,7 +6,7 @@ import {
 import * as v from "jsr:@valibot/valibot@0.42.1";
 import * as fn from "jsr:@denops/std@7.4.0/function";
 
-import { bufferParamsTransform } from "./types.ts";
+import { paramsToFlags } from "./types.ts";
 import { flagsSchema } from "../../lib/jq.ts";
 
 export async function start(denops: Denops, router: Router, uParams: unknown) {
@@ -16,13 +16,14 @@ export async function start(denops: Denops, router: Router, uParams: unknown) {
         v.intersectAsync([
           flagsSchema,
           v.pipeAsync(
-            bufferParamsTransform,
+            v.record(v.string(), v.unknown()),
             v.transformAsync(async (x) => {
               if (!("bufnr" in x) && !("bufname" in x)) {
                 return { bufnr: `${await fn.bufnr(denops, "%")}` };
               }
               return x;
             }),
+            paramsToFlags,
           ),
         ]),
         v.transformAsync((x) =>

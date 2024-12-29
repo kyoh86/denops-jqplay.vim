@@ -4,82 +4,75 @@ import {
   numberToString,
   numericString,
   type Schema,
-  type StringFields,
   stringToNumber,
 } from "../../types.ts";
 
-export type BufferParams =
-  | Record<string, never>
+export type Params =
   | { bufnr: number }
   | { bufname: string }
-  | { lnum: number | "$"; end: number | "$" }
   | { bufnr: number; lnum: number | "$"; end: number | "$" }
   | { bufname: string; lnum: number | "$"; end: number | "$" };
 
-export type BufferRangeParams = {
+export type RangeParams = {
   lnum: number | "$";
   end: number | "$";
 };
 
-export type BufferRangeFlags = {
+export type RangeFlags = {
   lnum: string | "$";
   end: string | "$";
 };
 
-export type BufferFlags = StringFields<BufferParams>;
+export type Flags =
+  | { bufnr: string }
+  | { bufname: string }
+  | { bufnr: string; lnum: string | "$"; end: string | "$" }
+  | { bufname: string; lnum: string | "$"; end: string | "$" };
 
-const bufferRangeParamsSchemaFields = {
+const rangeParamsSchemaFields = {
   lnum: v.union([v.number(), v.literal("$")]),
   end: v.union([v.number(), v.literal("$")]),
 };
 
-export const bufferParamsSchema = v.union([
-  v.record(v.string(), v.never()),
+export const paramsSchema = v.union([
   v.object({ bufnr: v.number() }),
   v.object({ bufname: v.string() }),
-  v.object({ ...bufferRangeParamsSchemaFields }),
-  v.object({ bufnr: v.number(), ...bufferRangeParamsSchemaFields }),
-  v.object({ bufname: v.string(), ...bufferRangeParamsSchemaFields }),
-]) satisfies Schema<BufferParams>;
+  v.object({ bufnr: v.number(), ...rangeParamsSchemaFields }),
+  v.object({ bufname: v.string(), ...rangeParamsSchemaFields }),
+]) satisfies Schema<Params>;
 
-const bufferRangeFlagsSchemaFields = {
+const rangeFlagsSchemaFields = {
   lnum: v.union([numericString, v.literal("$")]),
   end: v.union([numericString, v.literal("$")]),
 };
 
-export const bufferFlagSchema = v.union([
-  v.record(v.string(), v.never()),
+export const flagSchema = v.union([
   v.object({ bufnr: v.string() }),
   v.object({ bufname: v.string() }),
-  v.object({ ...bufferRangeFlagsSchemaFields }),
-  v.object({ bufnr: v.string(), ...bufferRangeFlagsSchemaFields }),
-  v.object({ bufname: v.string(), ...bufferRangeFlagsSchemaFields }),
-]) satisfies Schema<BufferFlags>;
+  v.object({ bufnr: v.string(), ...rangeFlagsSchemaFields }),
+  v.object({ bufname: v.string(), ...rangeFlagsSchemaFields }),
+]) satisfies Schema<Flags>;
 
-const bufferRangeFlagsTransformFields = {
+const rangeFlagsToParamsFields = {
   lnum: v.union([stringToNumber, v.literal("$")]),
   end: v.union([stringToNumber, v.literal("$")]),
 };
 
-export const bufferFlagsTransform = v.union([
-  v.record(v.string(), v.never()),
+export const flagsToParams = v.union([
   v.object({ bufnr: stringToNumber }),
   v.object({ bufname: v.string() }),
-  v.object({ ...bufferRangeFlagsTransformFields }),
-  v.object({ bufnr: stringToNumber, ...bufferRangeFlagsTransformFields }),
-  v.object({ bufname: v.string(), ...bufferRangeFlagsTransformFields }),
-]) satisfies Schema<BufferParams>;
+  v.object({ bufnr: stringToNumber, ...rangeFlagsToParamsFields }),
+  v.object({ bufname: v.string(), ...rangeFlagsToParamsFields }),
+]) satisfies Schema<Params>;
 
-const bufferRangeParamsTransformFields = {
+const rangeParamsToFlagsFields = {
   lnum: v.union([numberToString, v.literal("$")]),
   end: v.union([numberToString, v.literal("$")]),
 };
 
-export const bufferParamsTransform = v.union([
-  v.record(v.string(), v.never()),
+export const paramsToFlags = v.union([
   v.object({ bufnr: numberToString }),
   v.object({ bufname: v.string() }),
-  v.object({ ...bufferRangeParamsTransformFields }),
-  v.object({ bufnr: numberToString, ...bufferRangeParamsTransformFields }),
-  v.object({ bufname: v.string(), ...bufferRangeParamsTransformFields }),
-]) satisfies Schema<BufferFlags>;
+  v.object({ bufnr: numberToString, ...rangeParamsToFlagsFields }),
+  v.object({ bufname: v.string(), ...rangeParamsToFlagsFields }),
+]) satisfies Schema<Flags>;

@@ -1,4 +1,4 @@
-import type { Denops } from "jsr:@denops/core@7.0.1";
+import type { Denops } from "jsr:@denops/std@7.4.0";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
 import { parse } from "jsr:@denops/std@7.4.0/argument";
 import {
@@ -8,7 +8,7 @@ import {
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import { bufferFlagsTransform, type BufferParams } from "./types.ts";
+import { flagsToParams, type Params } from "./types.ts";
 
 export async function command(
   _denops: Denops,
@@ -17,9 +17,9 @@ export async function command(
 ) {
   const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
   const flags = v.parse(
-    v.intersect([flagsSchema, bufferOpenerSchema, bufferFlagsTransform]),
+    v.intersect([flagsSchema, bufferOpenerSchema, flagsToParams]),
     uFlags,
   );
-  flags satisfies BufferParams & Flags & BufferOpener;
+  flags satisfies Params & Flags & BufferOpener;
   await bound(flags);
 }
