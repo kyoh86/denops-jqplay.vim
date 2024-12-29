@@ -15,7 +15,6 @@ License: MIT License
 関数                                                        |jqplay-function|
 コマンド                                                    |jqplay-commands|
 オプション                                                  |jqplay-options|
-キーマップ                                                  |jqplay-keymaps|
 
 
 ==============================================================================
@@ -124,34 +123,18 @@ jqplay#buffer({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
+                                                 *jqplay#buffer()-option-lnum*
         {lnum}: 数値または"$"
             JSONデータを含むバッファの行の先頭を指定します。
             デフォルト: 1
 
+                                                  *jqplay#buffer()-option-end*
         {end}: 数値または"$"
             JSONデータを含むバッファの行の末尾を指定します。
             デフォルト: "$"
 
-		{jq-raw-input} : 真偽値 (0/1)
-			入力をJSONではなくそのままの文字列として扱います。
-			デフォルト: v:false
-		{jq-slurp}
-		{jq-compact-output}
-		{jq-raw-output}
-		{jq-join-output}
-		{jq-ascii-output}
-		{jq-sort-keys}
-		{jq-tab}
-		{jq-indent}
-		{jq-stream}
-		{jq-stream-errors}
-		{jq-seq}
-		{jq-arg}
-		{jq-argjson}
-		{jq-slurpfile}
-		{jq-rawfile}
-		{jq-cwd}
-		{jq-bin}
+        他にjqのオプションを指定することができます。
+        |jqplay-option-jq-params| を参照してください。
 
                                                                *jqplay#file()*
 jqplay#file({opt})
@@ -176,7 +159,8 @@ jqplay#file({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
-    TODO: jqのオプションを追加する
+        他にjqのオプションを指定することができます。
+        |jqplay-option-jq-params| を参照してください。
 
                                                                *jqplay#empty()*
 jqplay#empty({opt})
@@ -197,7 +181,8 @@ jqplay#empty({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
-    TODO: jqのオプションを追加する
+        他にjqのオプションを指定することができます。
+        |jqplay-option-jq-params| を参照してください。
 
 ==============================================================================
                                                              *jqplay-commands*
@@ -228,7 +213,8 @@ jqplay#empty({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
-    TODO: jqのオプションを追加する
+        他にjqのフラグを指定することができます。
+        |jqplay-option-jq-flags| を参照してください。
 
                                                                 *:JqplayFile*
 :JqplayFile [{flags}] {file}
@@ -247,14 +233,13 @@ jqplay#empty({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
-    TODO: jqのオプションを追加する
+        他にjqのフラグを指定することができます。
+        |jqplay-option-jq-flags| を参照してください。
 
                                                                  *:JqplayEmpty*
 :JqplayEmpty [{flags}]
 
-    |jqplay#buffer()|を呼び出します。
-    {buf}に指定したバッファがソースとして指定されます。
-    {buf}に指定できる内容は |bufnr()| に指定するものと同じです。
+    |jqplay#buffer()|を呼び出します。入力データはないものとします。
     {flags}には以下を指定できます
 
         --split={direction} : 文字列
@@ -267,7 +252,8 @@ jqplay#empty({opt})
             フォーカスを合わせるだけで新しいウインドウを開きません。
             デフォルト: v:false
 
-    TODO: jqのオプションを追加する
+        他にjqのフラグを指定することができます。
+        |jqplay-option-jq-flags| を参照してください。
 
 
 ==============================================================================
@@ -292,10 +278,160 @@ split : 文字列
     - "rightmost"  : 一番右に分割
     - "tab"        : 新しいタブページを作成
 
+                                                     *jqplay-option-jq-params*
 
-==============================================================================
-                                                              *jqplay-keymaps*
-キーマップ ~
+jqのオプションとして以下のフィールドを指定することができます。
+    {jq-raw-input} : v:true
+        入力をJSONではなくそのままの文字列として扱います。
+        デフォルト: v:false
+
+    {jq-slurp} : v:true
+        入力を単一の配列として扱います。
+        デフォルト: v:false
+
+    {jq-compact-output} : v:true
+        出力をコンパクトな形式で表示します。
+        デフォルト: v:false
+
+    {jq-raw-output} : v:true
+        出力をJSONではなくそのままの文字列として表示します。
+        デフォルト: v:false
+
+    {jq-join-output} : v:true
+        出力をJSONではなくそのままの文字列として表示しつつ、それぞれの出力を
+        改行で区切りません。
+        デフォルト: v:false
+
+    {jq-ascii-output} : v:true
+        出力をASCII文字のみで表示します。
+        ASCII文字以外の文字はエスケープされます。
+        デフォルト: v:false
+
+    {jq-sort-keys} : v:true
+        出力のキーをソートします。
+        デフォルト: v:false
+
+    {jq-tab} : v:true
+        出力のインデントをタブ文字で行います。
+        デフォルト: v:false
+
+    {jq-indent} : 数値
+        出力のインデントを指定した数のスペースで行います。
+        デフォルト: 2; 最大値: 7
+
+    {jq-stream} : v:true
+        入力をストリーミング形式でパースします。
+        デフォルト: v:false
+
+    {jq-stream-errors} : v:true
+        入力をストリーミング形式でパースして、エラーは配列形式で出力します。
+        デフォルト: v:false
+
+    {jq-seq} : v:true
+        入力を application/json-seq 形式でパースし、 application/json-seq
+        形式で出力します。
+        デフォルト: v:false
+
+    {jq-arg} : 辞書
+        {"name": "value"} 形式の辞書を指定することで、クエリ中で $name
+        として参照できる文字列変数を定義します。
+        例えば、`{"name": "value"}` と指定することで、クエリ中で `$name`
+        として `"value"` を参照できます。
+
+    {jq-argjson} : 辞書
+        {"name": "{\"x\":1}"} 形式の文字列の配列で指定することで、クエリ中で
+        $name として参照できるJSON変数を定義します。
+        例えば、`{"name": "{\"x\":1}"}` と指定することで、クエリ中で `$name`
+        として `{"x":1}` を参照できます。
+
+    {jq-slurpfile} : 辞書
+        {"name": "path"} 形式の辞書を指定することで、指定されたファイルを
+        読み込んで、ファイルの各行を配列として $name として参照できる変数を
+        定義します。
+        例えば、`{"name": "path"}` と指定することで、ファイルの各行を配列とし
+        て `$name` で参照できます。
+
+    {jq-rawfile} : 辞書
+        {"name": "path"} 形式の辞書を指定することで、指定されたファイルを
+        読み込んで、ファイルの中身を文字列として $name として参照できる変数を
+        定義します。
+        例えば、`{"name": "path"}` と指定することで、ファイルの中身を文字列と
+        して `$name` で参照できます。
+
+    {jq-cwd} : 文字列
+        jqの実行時のカレントディレクトリを指定します。jq-slurpfile などで
+        相対パスを指定する場合に使用します。指定しない場合は、Vimのカレント
+        ディレクトリが使用されます。
+        参考: |getcwd()|
+
+    {jq-bin} : 文字列
+        jqの実行ファイルのパスを指定します。デフォルトは "jq" です。
+
+                                                     *jqplay-option-jq-flags*
+
+コマンドにjqのためのフラグとして以下のフィールドを指定することができます。
+    --jq-raw-input
+        入力の各行をJSONではなくそのままの文字列として扱います。
+
+    --jq-slurp
+        入力を単一の配列として扱います。
+
+    --jq-compact-output
+        出力をコンパクトな形式で表示します。
+
+    --jq-raw-output
+        出力をJSONではなくそのままの文字列として表示します。
+
+    --jq-join-output
+        出力をJSONではなくそのままの文字列として表示しつつ、それぞれの出力を
+        改行で区切りません。
+
+    --jq-ascii-output
+        出力をASCII文字のみで表示します。
+        ASCII文字以外の文字はエスケープされます。
+
+    --jq-sort-keys
+        出力のキーをソートします。
+
+    --jq-tab
+        出力のインデントをタブ文字で行います。
+
+    --jq-indent {n}
+        出力のインデントを指定した数のスペースで行います。
+        デフォルト: 2; 最大値: 7
+
+    --jq-stream
+        入力をストリーミング形式でパースします。
+
+    --jq-stream-errors
+        入力をストリーミング形式でパースして、エラーは配列形式で出力します。
+
+    --jq-seq
+        入力を application/json-seq 形式でパースし、 application/json-seq
+        形式で出力します。
+
+    --jq-arg {arg} : 複数指定可能
+        `name=value` 形式で指定することで、クエリ中で $name として参照できる
+        変数を定義します。
+
+    --jq-argjson {arg-json} : 複数指定可能
+        `name={"x":1}` 形式で指定することで、クエリ中で $name として参照できる
+        JSON変数を定義します。
+
+    --jq-slurpfile {slurp-file} : 複数指定可能
+        `name=path` 形式の辞書を指定することで、指定されたファイルを読み込み、
+        ファイルの各行を配列として $name として参照できる変数を定義します。
+
+    --jq-rawfile {raw-file} : 複数指定可能
+        `name=path` 形式の辞書を指定することで、指定されたファイルを読み込み、
+        ファイルの中身を文字列として $name として参照できる変数を定義します。
+
+    --jq-cwd {path}
+        jqの実行時のカレントディレクトリを指定します。jq-slurpfile などで
+        相対パスを指定する場合に使用します。
+
+    --jq-bin {path}
+        jqの実行ファイルのパスを指定します。デフォルトは "jq" です。
 
 
 ==============================================================================

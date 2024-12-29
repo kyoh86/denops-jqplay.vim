@@ -15,7 +15,6 @@ Usage                                                    |jqplay-usage|
 Function                                                 |jqplay-function|
 Commands                                                 |jqplay-commands|
 Options                                                  |jqplay-options|
-Keymaps                                                  |jqplay-keymaps|
 
 
 ==============================================================================
@@ -40,15 +39,16 @@ write jq queries comfortably.
                                                                 *jqplay-setup*
 Setup ~
 
-Use the |jqplay#setup()| function.
+You can set the default values for the arguments of the functions provided by
+jqplay with the |jqplay#set_params()| function.
 
 
 ==============================================================================
                                                                 *jqplay-usage*
 Usage ~
 
-Start jqplay with |jqplay#file()|, |jqplay#buffer()|, |:Jqplay|, or
-|:Jqplay_file|.
+Start jqplay with the |jqplay#buffer()|, |jqplay#file()|, |jqplay#empty()|,
+|:JqplayBuffer|, |:JqplayFile| or |:JqplayEmpty| function.
 
 Enter a jq filter in the opened window.
 When you save with |:write|, the filter result is displayed in a new window.
@@ -61,8 +61,8 @@ the result is updated.
                                                              *jqplay-function*
 Function ~
 
-                                                              *jqplay#setup()*
-jqplay#setup({opts})
+                                                         *jqplay#set_params()*
+jqplay#set_params({opts})
 
     Set default values for arguments of other functions.
     Since all provided commands call the corresponding functions,
@@ -92,77 +92,172 @@ jqplay#setup({opts})
 
     You do not need to set settings for all functions. If you do not set them,
     the default values will be used.
-    Also, you can set across all functions by specifying `_` in the function
-    name. >vim
-        call jqplay#setup({ "_": { "split": "above" } })
+    Also, you can set across functions by using `_` in the function name. >vim
+        call jqplay#setup({ "_": {
+            \ "split": "above",
+            \ "jq-bin": "/usr/bin/jq" } })
 <
 
                                                              *jqplay#buffer()*
 jqplay#buffer({opts})
 
-    Open a new buffer and execute the 'jq' command interactively.
+    Open a query buffer and execute the 'jq' command interactively with the
+    JSON data in the buffer.
 
     {opts} is a dictionary that can have the following keys.
 
-                                               *jqplay#buffer()-option-source*
-    - "source": number
-        The buffer number that contains the JSON data.
-        Default is 0 (current buffer).
+                                                *jqplay#buffer()-option-bufnr*
+        {bufnr}: number
+            The buffer number that contains the JSON data.
+            Default is 0 (current buffer).
+
+                                              *jqplay#buffer()-option-bufname*
+        {bufname}: string
+            The buffer name that contains the JSON data.
+            Default is "" (using 'bufnr').
 
                                                 *jqplay#buffer()-option-split*
-    - "split": string
-        The direction in which to split the window.
-        Default is "below".
-        See |jqplay-option-split|.
+        {split}: string
+            The direction in which to split the window.
+            Default is "none".
+            See |jqplay-option-split|.
+
+                                                *jqplay#buffer()-option-reuse*
+        {reuse}: boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+                                                 *jqplay#buffer()-option-lnum*
+        {lnum}: number or "$"
+            The top line number of the JSON data.
+            Default is 1.
+
+                                                  *jqplay#buffer()-option-end*
+        {end}: number or "$"
+            The end line number of the JSON data.
+            Default is "$".
+
+        And you can set the options for the 'jq' command.
+        See |jqplay-option-jq-params|.
 
                                                                *jqplay#file()*
-jqplay#file({opts})
+jqplay#file({opt})
 
-    Open a new buffer and execute the 'jq' command interactively.
+    Open a query buffer and execute the 'jq' command interactively with the
+    JSON data in the file.
 
-    {opts} is a dictionary that can have the following keys.
+    {opt} is a dictionary that can have the following keys.
 
                                                  *jqplay#file()-option-source*
 
-    - "source": string (required)
-        Specifies the path to the JSON file.
+        {source}: string (required)
+            Specifies the path to the JSON file.
 
                                                   *jqplay#file()-option-split*
-    - "split": string
-        The direction in which to split the window.
-        Default is "below".
-        See |jqplay-option-split|.
+        {split}: string
+            The direction in which to split the window.
+            Default is "below".
+            See |jqplay-option-split|.
+
+                                                  *jqplay#file()-option-reuse*
+        {reuse}: boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+        And you can set the options for the 'jq' command.
+        See |jqplay-option-jq-params|.
+
+                                                              *jqplay#empty()*
+jqplay#empty({opt})
+
+    Open a new buffer and execute the 'jq' command interactively without the
+    input.
+
+    {opt} is a dictionary that can have the following keys.
+
+                                                 *jqplay#empty()-option-split*
+        {split}: string
+            The direction in which to split the window.
+            Default is "below".
+            See |jqplay-option-split|.
+
+                                                 *jqplay#empty()-option-reuse*
+        {reuse}: boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+        And you can set the options for the 'jq' command.
+        See |jqplay-option-jq-params|.
 
 
 ==============================================================================
                                                              *jqplay-commands*
 Commands ~
 
-                                                                     *:Jqplay*
-:Jqplay [{opts}]
+                                                               *:JqplayBuffer*
+:[range]JqplayBuffer [{flags}]
 
     Call the |jqplay#buffer()| function.
-    {opts} can have the following flags.
+    [range] is the range of the JSON data for the srouce.
+    {flags} can have the following flags.
 
-        --source={path} : number
+        --bufnr={path} : number
             Specifies the buffer number that contains the JSON data.
             Default is 0 (current buffer).
 
+        --bufname={path} : string
+            Specifies the buffer name that contains the JSON data.
+            Default is "" (using 'bufnr').
+
         --split={direction} : string
             The direction in which to split the window.
             Default is "none".
             See |jqplay-option-split|.
 
-                                                                *:Jqplay_file*
-:Jqplay [{opts}] {file}
+        --reuse : boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+        And you can set the flags for the 'jq' command.
+        See |jqplay-option-jq-flags|.
+
+                                                                *:JqplayFile*
+:JqplayFile [{flags}] {file}
 
     Call the |jqplay#file()| function.
-    {opts} can have the following flags.
+    {file} is the path to `jq` as the JSON file source.
+    {flags} can have the following flags.
 
         --split={direction} : string
             The direction in which to split the window.
             Default is "none".
             See |jqplay-option-split|.
+
+        --reuse : boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+        And you can set the flags for the 'jq' command.
+        See |jqplay-option-jq-flags|.
+
+                                                                *:JqplayEmpty*
+
+:JqplayEmpty [{flags}]
+
+    Call the |jqplay#empty()| function without input data.
+    {flags} can have the following flags.
+
+        --split={direction} : string
+            The direction in which to split the window.
+            Default is "none".
+            See |jqplay-option-split|.
+
+        --reuse : boolean
+            Reuse the window that the buffer is already opened.
+            Default is 0 (false).
+
+        And you can set the flags for the 'jq' command.
+        See |jqplay-option-jq-flags|.
 
 
 ==============================================================================
@@ -184,18 +279,173 @@ split : string
     - "leftmost"       : Split the window at the leftmost.
     - "left"           : Split the window to the left of the current window.
     - "right"          : Split the window to the right of the current window.
-	- "rightmost"      : Split the window at the rightmost.
-	- "tab"            : Split the window in a new tab.
+    - "rightmost"      : Split the window at the rightmost.
+    - "tab"            : Split the window in a new tab.
 
+                                         *jqplay-option-jq-params*
 
-==============================================================================
-                                                              *jqplay-keymaps*
-Keymaps ~
+You can set the following options for the 'jq' command.
 
+    {jq-raw-input} : boolean
+        Read each line as string instead of JSON.
+        Default: 0 (false)
 
-==============================================================================
-                                                                  *jqplay-api*
-API ~
+    {jq-slurp} : boolean
+        Read all inputs into an array and use it as the single input value.
+        Default: 0 (false)
+
+    {jq-compact-output} : boolean
+        Compact instead of pretty-printed output.
+        Default: 0 (false)
+
+    {jq-raw-output} : boolean
+        Output strings without escapes and quotes.
+        Default: 0 (false)
+
+    {jq-join-output} : boolean
+        Implies --jq-raw-output and output without newline after each output.
+        Default: 0 (false)
+
+    {jq-ascii-output} : boolean
+        Output strings by only ASCII characters using escape sequences.
+        Default: 0 (false)
+
+    {jq-sort-keys} : boolean
+        Sort keys of each object on output.
+        Default: 0 (false)
+
+    {jq-tab} : boolean
+        Use tabs for indentation.
+        Default: 0 (false)
+
+    {jq-indent} : number
+        Use n spaces for indentation (max 7 spaces).
+        Default: 2
+
+    {jq-stream} : boolean
+        Parse the input value in streaming fashion.
+        Default: 0 (false)
+
+    {jq-stream-errors} : boolean
+        Implies --stream and report parse error as an array.
+        Default: 0 (false)
+
+    {jq-seq} : boolean
+        Parse input/output as application/json-seq.
+        Default: 0 (false)
+
+    {jq-arg} : Dictionary
+        It accepts a dictionary with name to value mapping.
+        Set $name to the value in the query.
+        For example, {"name": "value"} is set as $name = "value".
+
+    {jq-argjson} : Dictionary
+        It accepts a dictionary with name to JSON value mapping.
+        Set $name to the JSON value in the query.
+        For example, {"name": {"key": "value"}} is set as $name = {"key":
+        "value"}.
+
+    {jq-slurpfile} : Dictionary
+        It accepts a dictionary with name to file path mapping.
+        Set $name to the array of the lines in the file.
+        For example, {"name": "/path/to/file"} is set as $name = [l1, l2...].
+
+    {jq-rawfile} : Dictionary
+        It accepts a dictionary with name to file path mapping.
+        Set $name to the string of the file content.
+        For example, {"name": "/path/to/file"} is set as $name = "content".
+
+    {jq-cwd} : string
+        Set the current working directory for the jq command. It will be used
+        as the base directory for the jq-slurpfile, and jq-rawfile options. If
+        it is not set, the current working directory of the Vim is used.
+        See: |getcwd()|.
+
+    {jq-bin} : string
+        Set the path to the jq command. Default: "jq"
+
+                                                      *jqplay-option-jq-flags*
+
+You can set the following flags for the 'jq' command.
+
+    --jq-raw-input : boolean
+        Read each line as string instead of JSON.
+        Default: 0 (false)
+
+    --jq-slurp : boolean
+        Read all inputs into an array and use it as the single input value.
+        Default: 0 (false)
+
+    --jq-compact-output : boolean
+        Compact instead of pretty-printed output.
+        Default: 0 (false)
+
+    --jq-raw-output : boolean
+        Output strings without escapes and quotes.
+        Default: 0 (false)
+
+    --jq-join-output : boolean
+        Implies --jq-raw-output and output without newline after each output.
+        Default: 0 (false)
+
+    --jq-ascii-output : boolean
+        Output strings by only ASCII characters using escape sequences.
+        Default: 0 (false)
+
+    --jq-sort-keys : boolean
+        Sort keys of each object on output.
+        Default: 0 (false)
+
+    --jq-tab : boolean
+        Use tabs for indentation.
+        Default: 0 (false)
+
+    --jq-indent : number
+        Use n spaces for indentation (max 7 spaces).
+        Default: 2
+
+    --jq-stream : boolean
+        Parse the input value in streaming fashion.
+        Default: 0 (false)
+
+    --jq-stream-errors : boolean
+        Implies --jq-stream and report parse error as an array.
+        Default: 0 (false)
+
+    --jq-seq : boolean
+        Parse input/output as application/json-seq.
+        Default: 0 (false)
+
+    --jq-arg {arg} (can be used multiple times)
+        It accepts strings like `name=value`.
+        Set $name to the value in the query.
+        For example, `name=value` is set as $name = "value".
+
+    --jq-argjson {arg} (can be used multiple times)
+        It accepts strings like `name={"x":1}`.
+        It accepts a dictionary with name to JSON value mapping.
+        Set $name to the JSON value in the query.
+        For example, `name={"x":1}` is set as $name = {"x":1}.
+
+    --jq-slurpfile {arg} (can be used multiple times)
+        It accepts strings like `name=/path/to/file`.
+        It accepts a dictionary with name to file path mapping.
+        Set $name to the array of the lines in the file.
+        For example, `name=/path/to/file` is set as $name = [l1, l2...].
+
+    --jq-rawfile {arg} (can be used multiple times)
+        It accepts strings like `name=/path/to/file`.
+        It accepts a dictionary with name to file path mapping.
+        Set $name to the string of the file content.
+        For example, `name=/path/to/file` is set as $name = "content".
+
+    --jq-cwd : string
+        Set the current working directory for the jq command. It will be used
+        as the base directory for the jq-slurpfile, and jq-rawfile options. If
+        it is not set, the current working directory of the Vim is used.
+
+    --jq-bin : string
+        Set the path to the jq command. Default: "jq"
 
 
 ==============================================================================
