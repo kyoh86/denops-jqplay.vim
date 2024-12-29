@@ -3,45 +3,58 @@ import {
   bindDispatcher,
   ParamStore,
 } from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.2";
-import { ensure, is, maybe } from "jsr:@core/unknownutil@4.3.0";
-import { parse } from "jsr:@denops/std@7.4.0/argument";
+import { is, maybe } from "jsr:@core/unknownutil@4.3.0";
 import * as vr from "jsr:@denops/std@7.4.0/variable";
-import {
-  type Buffer,
-  bufferOpenerSchema,
-  Router,
-} from "jsr:@kyoh86/denops-router@0.3.7";
-import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
-import * as fn from "jsr:@denops/std@7.4.0/function";
-import * as v from "jsr:@valibot/valibot@0.42.1";
+import { type Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.7";
 
-import {
-  type BufferParams,
-  bufferParamsSchema,
-  startFromBuffer,
-} from "./dispatch/buffer.ts";
-import {
-  type FileParams,
-  fileParamsSchema,
-  startFromFile,
-} from "./dispatch/file.ts";
-import {
-  type NullParams,
-  nullParamsSchema,
-  startFromNull,
-} from "./dispatch/null.ts";
-import { loadQueryBuffer, processQuery } from "./handler/query.ts";
-import { flagsSchema } from "./lib/jq.ts";
+import { BufferHandler } from "./kind/buffer/handler.ts";
+import { FileHandler } from "./kind/file/handler.ts";
+import { EmptyHandler } from "./kind/empty/handler.ts";
+
+import { start as startBuffer } from "./kind/buffer/start.ts";
+import { start as startFile } from "./kind/file/start.ts";
+import { start as startEmpty } from "./kind/empty/start.ts";
+
+import { command as commandBuffer } from "./kind/buffer/command.ts";
+import { command as commandFile } from "./kind/file/command.ts";
+import { command as commandEmpty } from "./kind/empty/command.ts";
 
 export const main: Entrypoint = async (denops) => {
   const tempDir = await Deno.makeTempDir({ prefix: "denops-jqplay.vim" });
   const router = new Router("jqplay");
-  router.addHandler("query", {
+
+  const bufferHandler = new BufferHandler();
+  const bufferProcessor = bufferHandler.processor();
+  router.addHandler("buffer", {
     load: async (buf: Buffer) => {
-      await loadQueryBuffer(denops, buf);
+      await bufferHandler.load(denops, buf);
     },
     save: (buf: Buffer) => {
-      processQuery(denops, router, tempDir, buf);
+      bufferProcessor(denops, router, tempDir, buf);
+      return Promise.resolve();
+    },
+  });
+
+  const fileHandler = new FileHandler();
+  const fileProcessor = fileHandler.processor();
+  router.addHandler("file", {
+    load: async (buf: Buffer) => {
+      await fileHandler.load(denops, buf);
+    },
+    save: (buf: Buffer) => {
+      fileProcessor(denops, router, tempDir, buf);
+      return Promise.resolve();
+    },
+  });
+
+  const emptyHandler = new EmptyHandler();
+  const emptyProcessor = emptyHandler.processor();
+  router.addHandler("empty", {
+    load: async (buf: Buffer) => {
+      await emptyHandler.load(denops, buf);
+    },
+    save: (buf: Buffer) => {
+      emptyProcessor(denops, router, tempDir, buf);
       return Promise.resolve();
     },
   });
@@ -49,97 +62,39 @@ export const main: Entrypoint = async (denops) => {
   router.addHandler("output", {
     load: async (_buf: Buffer) => {},
   });
-  const raw = { // bind params for each entrypoint
+
+  const raw = {
     buffer: async (uParams: unknown) => {
-      await startFromBuffer(
-        denops,
-        router,
-        v.parse(bufferParamsSchema, uParams),
-      );
-      return Promise.resolve(uParams);
+      await startBuffer(denops, router, uParams);
     },
     file: async (uParams: unknown) => {
-      await startFromFile(denops, router, v.parse(fileParamsSchema, uParams));
+      await startFile(denops, router, uParams);
     },
-    null: async (uParams: unknown) => {
-      await startFromNull(denops, router, v.parse(nullParamsSchema, uParams));
+    empty: async (uParams: unknown) => {
+      await startEmpty(denops, router, uParams);
     },
   };
+  // bind params for each entrypoint
   const bound = bindDispatcher(raw, new ParamStore(), "");
+
   denops.dispatcher = await router.dispatch(denops, {
     ...bound,
     "command:buffer": catchError(
       denops,
-      async (uRange: unknown, uArgs: unknown) => {
-        const range = ensure(
-          uRange,
-          is.ObjectOf({ range: is.Number, line1: is.Number, line2: is.Number }),
-        );
-        console.log(range);
-        const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-        let bufnr = 0;
-        switch (srcs.length) {
-          case 0: {
-            bufnr = await fn.bufnr(denops);
-            break;
-          }
-          case 1: {
-            bufnr = Number(srcs[0]);
-            if (isNaN(bufnr)) {
-              bufnr = await fn.bufnr(denops, srcs[0]);
-            }
-            break;
-          }
-          default: {
-            console.error(":JqplayBuffer can accept only one buffer name");
-            return;
-          }
-        }
-        const { split, ...flags } = v.parse(
-          v.intersect([flagsSchema, bufferOpenerSchema]),
-          uFlags,
-        );
-        flags satisfies Partial<BufferParams>;
-
-        await bound.buffer({ bufnr, split, ...flags });
+      async (uArgs: unknown) => {
+        return await commandBuffer(denops, uArgs, bound.buffer);
       },
     ),
     "command:file": catchError(
       denops,
       async (uArgs: unknown) => {
-        const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-        const { split, ...flags } = v.parse(
-          v.intersect([flagsSchema, bufferOpenerSchema]),
-          uFlags,
-        );
-        flags satisfies Partial<FileParams>;
-        switch (srcs.length) {
-          case 0: {
-            console.error(":JqplayFile needs a file name");
-            return;
-          }
-          case 1: {
-            break;
-          }
-          default: {
-            console.error(":JqplayFile can accept only one file name");
-            return;
-          }
-        }
-        const source = await fnamemodify(denops, srcs[0], "p");
-        await bound.file({ source, split, ...flags });
+        return await commandFile(denops, uArgs, bound.file);
       },
     ),
-    "command:null": catchError(
+    "command:empty": catchError(
       denops,
       async (uArgs: unknown) => {
-        const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-        const { split, ...flags } = v.parse(
-          v.intersect([flagsSchema, bufferOpenerSchema]),
-          uFlags,
-        );
-        flags satisfies Partial<NullParams>;
-        await bound.null({ split, ...flags });
+        return await commandEmpty(denops, uArgs, bound.empty);
       },
     ),
   });

@@ -47,8 +47,8 @@ License: MIT License
                                                                 *jqplay-usage*
 基本的な使い方 ~
 
-|jqplay#file()|、|jqplay#buffer()|、|jqplay#null()|、|:JqplayBuffer|、
-|:JqplayFile|または|:JqplayNull|を使用して、jqplayを開始します。
+|jqplay#buffer()|、|jqplay#file()|、|jqplay#empty()|、|:JqplayBuffer|、
+|:JqplayFile|または|:JqplayEmpty|を使用して、jqplayを開始します。
 
 開いたウィンドウに、jqのフィルタを入力してください。
 |:write|で保存すると、フィルタ結果が新しいウィンドウに表示されます。
@@ -95,7 +95,6 @@ jqplay#setup({opts})
             \ "jq-bin": "/usr/bin/jq" } })
 <
 
-TODO: jqplay#null({opt})
 TODO: これらの関数の実装
                                                              *jqplay#buffer()*
 jqplay#buffer({opt})
@@ -115,6 +114,7 @@ jqplay#buffer({opt})
             デフォルト: "none"
             参照: |jqplay-option-split|
 
+	TODO: range指定を追加する
 	TODO: jqのオプションを追加する
 
                                                                *jqplay#file()*
@@ -136,19 +136,32 @@ jqplay#file({opt})
 
 	TODO: jqのオプションを追加する
 
+                                                               *jqplay#empty()*
+jqplay#empty({opt})
+
+    入力なしでjqplayを開始します。
+
+    {opt} は以下のようなフィールドを持つ辞書です。
+
+                                                  *jqplay#empty()-option-split*
+        {split} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+
+	TODO: jqのオプションを追加する
+
 ==============================================================================
                                                              *jqplay-commands*
 コマンド ~
 
-TODO: :JqplayNull
-
                                                                *:JqplayBuffer*
-:JqplayBuffer [{opts}] {buf}
+:[range]JqplayBuffer [{flags}] {buf}
 
     |jqplay#buffer()|を呼び出します。
-    {buf} に指定したバッファがソースとして指定されます。
+    {buf}に指定したバッファの[range]の中の行がソースとして指定されます。
 	{buf}に指定できる内容は |bufnr()| に指定するものと同じです。
-    {opts}には以下を指定できます
+    {flags}には以下を指定できます
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
@@ -158,11 +171,11 @@ TODO: :JqplayNull
 	TODO: jqのオプションを追加する
 
                                                                 *:JqplayFile*
-:JqplayFile [{opts}] {file}
+:JqplayFile [{flags}] {file}
 
     |jqplay#file()|を呼び出します。
-    {file} に指定したファイルがソースとして指定されます。
-    {opts}には以下を指定できます
+    {file}に指定したファイルがソースとして指定されます。
+    {flags}には以下を指定できます
 
         --split={direction} : 文字列
             新しく開くバッファウィンドウの分割方法を指定します。
@@ -170,6 +183,22 @@ TODO: :JqplayNull
             参照: |jqplay-option-split|
 
 	TODO: jqのオプションを追加する
+
+                                                                 *:JqplayEmpty*
+:JqplayEmpty [{flags}]
+
+    |jqplay#buffer()|を呼び出します。
+    {buf}に指定したバッファがソースとして指定されます。
+	{buf}に指定できる内容は |bufnr()| に指定するものと同じです。
+    {flags}には以下を指定できます
+
+        --split={direction} : 文字列
+            新しく開くバッファウィンドウの分割方法を指定します。
+            デフォルト: "none"
+            参照: |jqplay-option-split|
+	
+	TODO: jqのオプションを追加する
+
 
 ==============================================================================
                                                               *jqplay-options*
