@@ -6,20 +6,40 @@ import {
   bufferOpenerSchema,
 } from "jsr:@kyoh86/denops-router@0.3.7";
 import * as v from "jsr:@valibot/valibot@0.42.1";
+import * as fn from "jsr:@denops/std@7.4.0/function";
 
-import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import { flagsToParams, type Params } from "./types.ts";
+import {
+  flagsToParams as jqFlags,
+  type Params as JqParams,
+} from "../../lib/jq.ts";
+import {
+  flagsToParams as bufFlags,
+  type Params as BufParams,
+} from "./types.ts";
 
 export async function command(
-  _denops: Denops,
+  denops: Denops,
   uArgs: unknown,
   bound: (uParams: unknown) => Promise<void>,
 ) {
   const [_, uFlags] = parse(ensure(uArgs, is.ArrayOf(is.String)));
-  const flags = v.parse(
-    v.intersect([flagsSchema, bufferOpenerSchema, flagsToParams]),
+  const flags = await v.parseAsync(
+    v.intersectAsync([
+      jqFlags,
+      bufferOpenerSchema,
+      v.pipeAsync(
+        v.record(v.string(), v.unknown()),
+        v.transformAsync(async (x) => {
+          if (!("bufnr" in x) && !("bufname" in x)) {
+            return { bufnr: `${await fn.bufnr(denops, "%")}` };
+          }
+          return x;
+        }),
+        bufFlags,
+      ),
+    ]),
     uFlags,
   );
-  flags satisfies Params & Flags & BufferOpener;
+  flags satisfies BufParams & JqParams & BufferOpener;
   await bound(flags);
 }

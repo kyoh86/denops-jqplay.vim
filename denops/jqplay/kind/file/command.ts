@@ -8,8 +8,11 @@ import {
 import { fnamemodify } from "jsr:@denops/std@7.4.0/function";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
-import { type Flags, flagsSchema } from "../../lib/jq.ts";
-import type { Params } from "./types.ts";
+import {
+  flagsToParams as jqFlags,
+  type Params as JqParams,
+} from "../../lib/jq.ts";
+import type { Params as FileParams } from "./types.ts";
 
 export async function command(
   denops: Denops,
@@ -18,10 +21,10 @@ export async function command(
 ) {
   const [_, uFlags, srcs] = parse(ensure(uArgs, is.ArrayOf(is.String)));
   const flags = v.parse(
-    v.intersect([flagsSchema, bufferOpenerSchema]),
+    v.intersect([jqFlags, bufferOpenerSchema]),
     uFlags,
   );
-  flags satisfies Flags & BufferOpener;
+  flags satisfies JqParams & BufferOpener;
   switch (srcs.length) {
     case 0: {
       console.error(":JqplayFile needs a file name");
@@ -38,8 +41,8 @@ export async function command(
   const source = await fnamemodify(denops, srcs[0], "p");
   await bound(
     { source, ...flags } satisfies (
-      & Params
-      & Flags
+      & FileParams
+      & JqParams
       & BufferOpener
     ),
   );

@@ -6,24 +6,24 @@ import {
 import * as v from "jsr:@valibot/valibot@0.42.1";
 import * as fn from "jsr:@denops/std@7.4.0/function";
 
-import { paramsToFlags } from "./types.ts";
-import { flagsSchema } from "../../lib/jq.ts";
+import { paramsToFlags as bufParams } from "./types.ts";
+import { paramsToFlags as jqParams } from "../../lib/jq.ts";
 
 export async function start(denops: Denops, router: Router, uParams: unknown) {
   const params = await v.parseAsync(
     v.intersectAsync([
       v.pipeAsync(
         v.intersectAsync([
-          flagsSchema,
+          jqParams,
           v.pipeAsync(
             v.record(v.string(), v.unknown()),
             v.transformAsync(async (x) => {
               if (!("bufnr" in x) && !("bufname" in x)) {
-                return { bufnr: `${await fn.bufnr(denops, "%")}` };
+                return { bufnr: await fn.bufnr(denops, "%") };
               }
               return x;
             }),
-            paramsToFlags,
+            bufParams,
           ),
         ]),
         v.transformAsync((x) =>
