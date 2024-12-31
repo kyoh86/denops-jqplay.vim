@@ -2,7 +2,7 @@ import type { Denops } from "jsr:@denops/std@7.4.0";
 import {
   bufferOpenerSchema,
   type Router,
-} from "jsr:@kyoh86/denops-router@0.3.7";
+} from "jsr:@kyoh86/denops-router@0.4.2";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import { paramsToFlags as fileParams } from "./types.ts";

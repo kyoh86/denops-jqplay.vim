@@ -5,7 +5,7 @@ import {
 } from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.2";
 import { is, maybe } from "jsr:@core/unknownutil@4.3.0";
 import * as vr from "jsr:@denops/std@7.4.0/variable";
-import { type Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.7";
+import { Router } from "jsr:@kyoh86/denops-router@0.4.2";
 
 import { BufferHandler } from "./kind/buffer/handler.ts";
 import { FileHandler } from "./kind/file/handler.ts";
@@ -26,10 +26,10 @@ export const main: Entrypoint = async (denops) => {
   const bufferHandler = new BufferHandler();
   const bufferProcessor = bufferHandler.processor();
   router.addHandler("buffer", {
-    load: async (buf: Buffer) => {
-      await bufferHandler.load(denops, buf);
+    load: async (ctx, buf) => {
+      await bufferHandler.load(denops, ctx, buf);
     },
-    save: (buf: Buffer) => {
+    save: (_ctx, buf) => {
       bufferProcessor(denops, router, tempDir, buf);
       return Promise.resolve();
     },
@@ -38,10 +38,10 @@ export const main: Entrypoint = async (denops) => {
   const fileHandler = new FileHandler();
   const fileProcessor = fileHandler.processor();
   router.addHandler("file", {
-    load: async (buf: Buffer) => {
-      await fileHandler.load(denops, buf);
+    load: async (ctx, buf) => {
+      await fileHandler.load(denops, ctx, buf);
     },
-    save: (buf: Buffer) => {
+    save: (_ctx, buf) => {
       fileProcessor(denops, router, tempDir, buf);
       return Promise.resolve();
     },
@@ -50,17 +50,17 @@ export const main: Entrypoint = async (denops) => {
   const emptyHandler = new EmptyHandler();
   const emptyProcessor = emptyHandler.processor();
   router.addHandler("empty", {
-    load: async (buf: Buffer) => {
-      await emptyHandler.load(denops, buf);
+    load: async (ctx, buf) => {
+      await emptyHandler.load(denops, ctx, buf);
     },
-    save: (buf: Buffer) => {
+    save: (_ctx, buf) => {
       emptyProcessor(denops, router, tempDir, buf);
       return Promise.resolve();
     },
   });
 
   router.addHandler("output", {
-    load: async (_buf: Buffer) => {},
+    load: async (_ctx, _buf) => {},
   });
 
   const raw = {

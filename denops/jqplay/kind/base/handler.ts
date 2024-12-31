@@ -1,5 +1,9 @@
 import type { Denops } from "jsr:@denops/std@7.4.0";
-import type { Buffer, Router } from "jsr:@kyoh86/denops-router@0.3.7";
+import type {
+  Buffer,
+  LoadContext,
+  Router,
+} from "jsr:@kyoh86/denops-router@0.4.2";
 import * as path from "jsr:@std/path@1.0.8";
 import * as option from "jsr:@denops/std@7.4.0/option";
 import * as fn from "jsr:@denops/std@7.4.0/function";
@@ -11,16 +15,18 @@ import { getBufVars, setBufVars } from "./bufvar.ts";
 import { getNewSessionId } from "../../lib/session.ts";
 
 export abstract class BaseHandler<TParams> {
-  async load(denops: Denops, buf: Buffer) {
+  async load(denops: Denops, ctx: LoadContext, buf: Buffer) {
     await this.parseBufParams(denops, buf);
 
     // set filetype
     await option.filetype.setBuffer(denops, buf.bufnr, Filetype.Query);
 
-    // store params
-    await setBufVars(denops, buf.bufnr, {
-      session: await getNewSessionId(denops),
-    });
+    if (!ctx.firstTime) {
+      // create new session and set it to buffer
+      await setBufVars(denops, buf.bufnr, {
+        session: await getNewSessionId(denops),
+      });
+    }
   }
   abstract parseBufParams(
     denops: Denops,
