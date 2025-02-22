@@ -1,10 +1,10 @@
-import type { Denops } from "jsr:@denops/std@7.4.0";
+import type { Denops } from "jsr:@denops/std@7.5.0";
 import {
   bufferOpenerSchema,
   type Router,
 } from "jsr:@kyoh86/denops-router@0.4.2";
 import * as v from "jsr:@valibot/valibot@0.42.1";
-import * as fn from "jsr:@denops/std@7.4.0/function";
+import * as fn from "jsr:@denops/std@7.5.0/function";
 
 import { paramsToFlags as bufParams } from "./types.ts";
 import { paramsToFlags as jqParams } from "../../lib/jq.ts";

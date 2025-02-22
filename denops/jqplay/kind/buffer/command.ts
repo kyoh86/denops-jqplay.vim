@@ -1,12 +1,12 @@
-import type { Denops } from "jsr:@denops/std@7.4.0";
+import type { Denops } from "jsr:@denops/std@7.5.0";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
-import { parse } from "jsr:@denops/std@7.4.0/argument";
+import { parse } from "jsr:@denops/std@7.5.0/argument";
 import {
   type BufferOpener,
   bufferOpenerSchema,
 } from "jsr:@kyoh86/denops-router@0.4.2";
 import * as v from "jsr:@valibot/valibot@0.42.1";
-import * as fn from "jsr:@denops/std@7.4.0/function";
+import * as fn from "jsr:@denops/std@7.5.0/function";
 
 import {
   flagsToParams as jqFlags,

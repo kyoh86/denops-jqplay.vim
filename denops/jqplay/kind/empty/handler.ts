@@ -1,4 +1,4 @@
-import type { Denops } from "jsr:@denops/std@7.4.0";
+import type { Denops } from "jsr:@denops/std@7.5.0";
 import type { Buffer } from "jsr:@kyoh86/denops-router@0.4.2";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 import { TextLineStream } from "jsr:@std/streams@1.0.9";
