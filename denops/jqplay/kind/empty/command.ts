@@ -4,7 +4,7 @@ import { parse } from "jsr:@denops/std@7.5.0/argument";
 import {
   type BufferOpener,
   bufferOpenerSchema,
-} from "jsr:@kyoh86/denops-router@0.4.2";
+} from "jsr:@kyoh86/denops-router@0.4.3";
 import * as v from "jsr:@valibot/valibot@0.42.1";
 
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
