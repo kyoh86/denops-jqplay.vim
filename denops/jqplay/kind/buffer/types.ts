@@ -1,4 +1,4 @@
-import * as v from "jsr:@valibot/valibot@0.42.1";
+import * as v from "jsr:@valibot/valibot@1.0.0";
 
 import {
   numberToString,

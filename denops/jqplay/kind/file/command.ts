@@ -4,9 +4,9 @@ import { parse } from "jsr:@denops/std@7.5.0/argument";
 import {
   type BufferOpener,
   bufferOpenerSchema,
-} from "jsr:@kyoh86/denops-router@0.4.3";
+} from "jsr:@kyoh86/denops-router@0.5.0";
 import { fnamemodify } from "jsr:@denops/std@7.5.0/function";
-import * as v from "jsr:@valibot/valibot@0.42.1";
+import * as v from "jsr:@valibot/valibot@1.0.0";
 
 import {
   flagsToParams as jqFlags,

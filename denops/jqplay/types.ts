@@ -1,8 +1,8 @@
 // Type definitions for denops-jqplay.vim
 // export type Foo = "foo" | "bar" | "baz";
 
-import type { BaseIssue, BaseSchema } from "jsr:@valibot/valibot@0.42.1";
-import * as v from "jsr:@valibot/valibot@0.42.1";
+import type { BaseIssue, BaseSchema } from "jsr:@valibot/valibot@1.0.0";
+import * as v from "jsr:@valibot/valibot@1.0.0";
 
 export type Schema<TSchema> = BaseSchema<
   unknown,
