@@ -3,7 +3,7 @@ import {
   bufferOpenerSchema,
   type Router,
 } from "jsr:@kyoh86/denops-router@0.5.0";
-import * as v from "jsr:@valibot/valibot@1.0.0";
+import * as v from "jsr:@valibot/valibot@1.1.0";
 
 import { paramsToFlags as fileParams } from "./types.ts";
 import { paramsToFlags as jqParams } from "../../lib/jq.ts";
