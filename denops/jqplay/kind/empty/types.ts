@@ -1,4 +1,4 @@
-import * as v from "jsr:@valibot/valibot@1.0.0";
+import * as v from "jsr:@valibot/valibot@1.1.0";
 
 import type { Schema, StringFields } from "../../types.ts";
 

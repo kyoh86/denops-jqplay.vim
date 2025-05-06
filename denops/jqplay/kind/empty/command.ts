@@ -5,7 +5,7 @@ import {
   type BufferOpener,
   bufferOpenerSchema,
 } from "jsr:@kyoh86/denops-router@0.5.0";
-import * as v from "jsr:@valibot/valibot@1.0.0";
+import * as v from "jsr:@valibot/valibot@1.1.0";
 
 import { type Flags, flagsSchema } from "../../lib/jq.ts";
 import { flagsToParams, type Params } from "./types.ts";
