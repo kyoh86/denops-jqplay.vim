@@ -6,7 +6,7 @@ import {
   bufferOpenerSchema,
 } from "jsr:@kyoh86/denops-router@0.5.0";
 import { fnamemodify } from "jsr:@denops/std@7.5.0/function";
-import * as v from "jsr:@valibot/valibot@1.0.0";
+import * as v from "jsr:@valibot/valibot@1.1.0";
 
 import {
   flagsToParams as jqFlags,
