@@ -1,10 +1,10 @@
-import type { Denops, Entrypoint } from "jsr:@denops/std@7.5.1";
+import type { Denops, Entrypoint } from "jsr:@denops/std@7.6.0";
 import {
   bindDispatcher,
   ParamStore,
 } from "jsr:@kyoh86/denops-bind-params@^0.0.4-alpha.2";
 import { is, maybe } from "jsr:@core/unknownutil@4.3.0";
-import * as vr from "jsr:@denops/std@7.5.1/variable";
+import * as vr from "jsr:@denops/std@7.6.0/variable";
 import { Router } from "jsr:@kyoh86/denops-router@0.5.0";
 
 import { BufferHandler } from "./kind/buffer/handler.ts";

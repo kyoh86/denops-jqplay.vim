@@ -1,11 +1,11 @@
-import type { Denops } from "jsr:@denops/std@7.5.1";
+import type { Denops } from "jsr:@denops/std@7.6.0";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
-import { parse } from "jsr:@denops/std@7.5.1/argument";
+import { parse } from "jsr:@denops/std@7.6.0/argument";
 import {
   type BufferOpener,
   bufferOpenerSchema,
 } from "jsr:@kyoh86/denops-router@0.5.0";
-import { fnamemodify } from "jsr:@denops/std@7.5.1/function";
+import { fnamemodify } from "jsr:@denops/std@7.6.0/function";
 import * as v from "jsr:@valibot/valibot@1.1.0";
 
 import {

@@ -1,8 +1,8 @@
-import type { Denops } from "jsr:@denops/std@7.5.1";
+import type { Denops } from "jsr:@denops/std@7.6.0";
 import type { Buffer } from "jsr:@kyoh86/denops-router@0.5.0";
-import * as fn from "jsr:@denops/std@7.5.1/function";
+import * as fn from "jsr:@denops/std@7.6.0/function";
 import * as v from "jsr:@valibot/valibot@1.1.0";
-import { TextLineStream } from "jsr:@std/streams@1.0.9";
+import { TextLineStream } from "jsr:@std/streams@1.0.10";
 
 import {
   BufferWritingStream,
