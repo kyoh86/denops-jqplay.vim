@@ -4,7 +4,7 @@ import type {
   LoadContext,
   Router,
 } from "jsr:@kyoh86/denops-router@0.5.0";
-import * as path from "jsr:@std/path@1.1.0";
+import * as path from "jsr:@std/path@1.1.1";
 import * as option from "jsr:@denops/std@7.6.0/option";
 import * as fn from "jsr:@denops/std@7.6.0/function";
 
