@@ -1,4 +1,4 @@
-import { assert } from "jsr:@std/assert@1.0.13";
+import { assert } from "jsr:@std/assert@1.0.14";
 import { debounceWithAbort } from "./debounce.ts";
 
 function delay(ms: number) {
