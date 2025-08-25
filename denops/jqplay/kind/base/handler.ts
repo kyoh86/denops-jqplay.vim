@@ -1,12 +1,12 @@
-import type { Denops } from "jsr:@denops/std@7.6.0";
+import type { Denops } from "jsr:@denops/std@8.0.0";
 import type {
   Buffer,
   LoadContext,
   Router,
 } from "jsr:@kyoh86/denops-router@0.5.0";
-import * as path from "jsr:@std/path@1.1.1";
-import * as option from "jsr:@denops/std@7.6.0/option";
-import * as fn from "jsr:@denops/std@7.6.0/function";
+import * as path from "jsr:@std/path@1.1.2";
+import * as option from "jsr:@denops/std@8.0.0/option";
+import * as fn from "jsr:@denops/std@8.0.0/function";
 
 import { Filetype } from "./filetype.ts";
 import { type Context, type Flags, start } from "../../lib/jq.ts";
