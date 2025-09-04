@@ -1,5 +1,5 @@
-import type { Denops } from "jsr:@denops/std@7.6.0";
-import * as buffer from "jsr:@denops/std@7.6.0/buffer";
+import type { Denops } from "jsr:@denops/std@8.0.0";
+import * as buffer from "jsr:@denops/std@8.0.0/buffer";
 
 export class BufferWritingStream extends WritableStream<string[]> {
   constructor(denops: Denops, bufnr: number) {

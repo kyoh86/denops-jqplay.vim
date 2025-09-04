@@ -1,7 +1,7 @@
-import type { Denops } from "jsr:@denops/std@7.6.0";
+import type { Denops } from "jsr:@denops/std@8.0.0";
 import { ensure, is } from "jsr:@core/unknownutil@4.3.0";
-import * as buffer from "jsr:@denops/std@7.6.0/buffer";
-import * as variable from "jsr:@denops/std@7.6.0/variable";
+import * as buffer from "jsr:@denops/std@8.0.0/buffer";
+import * as variable from "jsr:@denops/std@8.0.0/variable";
 
 export type BufVars = { session: string };
 
